@@ -1,3 +1,4 @@
+import type React from "react";
 import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
 import type { Adjustment, Assumptions, LineItem } from "./finance";
 
@@ -93,7 +94,9 @@ interface Ctx {
   update: (id: string, patch: Partial<Deal>) => void;
   add: (d: Deal) => void;
 }
-const DealsCtx = createContext<Ctx | null>(null);
+// Keep one context instance across hot reloads so provider and consumers always match.
+const g = globalThis as unknown as { __keystoneDealsCtx?: React.Context<Ctx | null> };
+const DealsCtx = (g.__keystoneDealsCtx ??= createContext<Ctx | null>(null));
 const KEY = "keystone.deals.v1";
 
 export function DealsProvider({ children }: { children: ReactNode }) {

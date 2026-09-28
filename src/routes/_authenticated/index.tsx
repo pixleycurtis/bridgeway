@@ -1,88 +1,216 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { PageHeader, Stat, StageBadge } from "@/components/app-shell";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { useDeals } from "@/lib/deals-store";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { useDeals, type Deal } from "@/lib/deals-store";
 import { analyze, pct, sumBy, usd } from "@/lib/finance";
+import { useWorkspace } from "@/lib/workspace";
+import { PIPELINE_COLUMNS, allStages, daysInStage, isOpen, type ColumnKey } from "@/lib/firm-settings";
 
 export const Route = createFileRoute("/_authenticated/")({
   head: () => ({
     meta: [
       { title: "Pipeline — Keystone" },
-      { name: "description", content: "Every deal you're underwriting, with broker-vs-actual gaps and returns at a glance." },
+      { name: "description", content: "See every deal by stage, filter by property type and market, and spot stalled deals." },
       { property: "og:title", content: "Pipeline — Keystone" },
-      { property: "og:description", content: "Every deal you're underwriting, with broker-vs-actual gaps and returns at a glance." },
+      { property: "og:description", content: "See every deal by stage, filter by property type and market, and spot stalled deals." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
     ],
   }),
   component: Pipeline,
 });
 
+function usePref<T>(key: string, init: T) {
+  const [v, setV] = useState<T>(init);
+  useEffect(() => { const s = localStorage.getItem(key); if (s) try { setV(JSON.parse(s)); } catch { /* ignore */ } }, [key]);
+  return [v, (n: T) => { setV(n); localStorage.setItem(key, JSON.stringify(n)); }] as const;
+}
+
 function Pipeline() {
-  const { deals } = useDeals();
-  const active = deals.filter((d) => !["Closed", "Passed"].includes(d.stage));
-  const volume = active.reduce((s, d) => s + d.assumptions.price, 0);
+  const { deals, update } = useDeals();
+  const { settings, user } = useWorkspace();
+  const stages = allStages(settings);
+  const [tab, setTab] = useState<string>("Active");
+  const [view, setView] = usePref<"table" | "board">(`ks:view:${user.id}`, "table");
+  const [cols, setCols] = usePref<ColumnKey[]>(`ks:cols:${user.id}`, settings.columns);
+  const [q, setQ] = useState("");
+  const [type, setType] = useState("");
+  const [market, setMarket] = useState("");
+
+  const markets = useMemo(() => [...new Set(deals.map((d) => d.market).filter(Boolean))].sort(), [deals]);
+  const types = useMemo(() => [...new Set([...settings.propertyTypes, ...deals.map((d) => d.propertyType)])], [deals, settings.propertyTypes]);
+  const filtered = deals.filter((d) =>
+    (!q || `${d.name} ${d.address} ${d.market}`.toLowerCase().includes(q.toLowerCase())) &&
+    (!type || d.propertyType === type) && (!market || d.market === market));
+  const inTab = filtered.filter((d) => tab === "All" ? true : tab === "Active" ? isOpen(d.stage) : d.stage === tab);
+  const active = filtered.filter((d) => isOpen(d.stage));
+  const stalled = active.filter((d) => daysInStage(d.stageHistory, d.createdAt) >= settings.stallDays);
+  const count = (s: string) => filtered.filter((d) => (s === "All" ? true : s === "Active" ? isOpen(d.stage) : d.stage === s)).length;
+
   return (
     <div>
-      <PageHeader eyebrow="Pipeline" title="Your deals">
-        <NewDeal />
-      </PageHeader>
+      <PageHeader eyebrow="Pipeline" title="Your deals"><NewDeal /></PageHeader>
       <div className="flex flex-wrap gap-y-4 px-6 py-6 md:px-10">
         <Stat label="Active deals" value={String(active.length)} />
-        <Stat label="Active volume" value={usd(volume, true)} />
-        <Stat label="Closed" value={String(deals.filter((d) => d.stage === "Closed").length)} />
-        <Stat label="Passed" value={String(deals.filter((d) => d.stage === "Passed").length)} />
+        <Stat label="Active volume" value={usd(active.reduce((s, d) => s + d.assumptions.price, 0), true)} />
+        <Stat label={`Stalled ${settings.stallDays}+ days`} value={String(stalled.length)} tone={stalled.length ? "warn" : undefined} />
+        <Stat label="Closed" value={String(count("Closed"))} />
+        <Stat label="Passed" value={String(count("Passed"))} />
       </div>
 
-      <div className="px-6 pb-12 md:px-10">
-        <div className="overflow-x-auto rounded-md border bg-card">
-          <table className="w-full text-sm">
-            <thead className="border-b text-left text-[11px] uppercase tracking-widest text-muted-foreground">
-              <tr>
-                <th className="px-4 py-3 font-medium">Deal</th>
-                <th className="px-4 py-3 font-medium">Stage</th>
-                <th className="px-4 py-3 text-right font-medium">Price</th>
-                <th className="px-4 py-3 text-right font-medium">Broker cap</th>
-                <th className="px-4 py-3 text-right font-medium">Your cap</th>
-                <th className="px-4 py-3 text-right font-medium">NOI gap</th>
-                <th className="px-4 py-3 text-right font-medium">IRR</th>
+      <div className="px-6 md:px-10">
+        <div className="flex flex-wrap items-center gap-2">
+          <Input placeholder="Search deals" value={q} onChange={(e) => setQ(e.target.value)} className="h-9 w-56" />
+          <Sel value={type} onChange={setType} all="All property types" options={types} />
+          <Sel value={market} onChange={setMarket} all="All markets" options={markets} />
+          <div className="ml-auto flex items-center gap-2">
+            {view === "table" && (
+              <Popover>
+                <PopoverTrigger asChild><Button variant="outline" size="sm">Columns</Button></PopoverTrigger>
+                <PopoverContent className="w-56 space-y-1.5 text-sm">
+                  {PIPELINE_COLUMNS.map((c) => (
+                    <label key={c.key} className="flex items-center gap-2">
+                      <input type="checkbox" checked={cols.includes(c.key)} onChange={(e) => setCols(e.target.checked ? PIPELINE_COLUMNS.map((x) => x.key).filter((k) => k === c.key || cols.includes(k)) : cols.filter((k) => k !== c.key))} />
+                      {c.label}
+                    </label>
+                  ))}
+                </PopoverContent>
+              </Popover>
+            )}
+            <div className="flex rounded-md border p-0.5 text-sm">
+              {(["table", "board"] as const).map((v) => (
+                <button key={v} onClick={() => setView(v)} className={`rounded px-3 py-1 capitalize ${view === v ? "bg-primary text-primary-foreground" : "text-muted-foreground"}`}>{v}</button>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        {view === "table" && (
+          <nav className="mt-5 flex gap-1 overflow-x-auto border-b" role="tablist">
+            {["Active", ...stages, "All"].map((s) => (
+              <button key={s} role="tab" aria-selected={tab === s} onClick={() => setTab(s)}
+                className={`-mb-px whitespace-nowrap border-b-2 px-3 py-2 text-sm ${tab === s ? "border-primary text-foreground" : "border-transparent text-muted-foreground hover:text-foreground"}`}>
+                {s} <span className="num ml-1 rounded bg-muted px-1.5 text-xs">{count(s)}</span>
+              </button>
+            ))}
+          </nav>
+        )}
+      </div>
+
+      <div className="px-6 pb-12 pt-4 md:px-10">
+        {view === "table" ? <DealTable deals={inTab} cols={cols} stall={settings.stallDays} /> : <Board deals={filtered} stages={stages} stall={settings.stallDays} onMove={(id, stage) => update(id, { stage })} />}
+      </div>
+    </div>
+  );
+}
+
+function Sel({ value, onChange, all, options }: { value: string; onChange: (v: string) => void; all: string; options: string[] }) {
+  return (
+    <select value={value} onChange={(e) => onChange(e.target.value)} className="h-9 rounded-md border bg-card px-2 text-sm">
+      <option value="">{all}</option>
+      {options.map((o) => <option key={o}>{o}</option>)}
+    </select>
+  );
+}
+
+function metrics(d: Deal) {
+  const b = sumBy(d.lines, "broker").noi;
+  const r = analyze(d.lines, d.assumptions, d.adjustments);
+  return { b, r, gap: r.noi - b, days: daysInStage(d.stageHistory, d.createdAt) };
+}
+
+function DealTable({ deals, cols, stall }: { deals: Deal[]; cols: ColumnKey[]; stall: number }) {
+  const shown = PIPELINE_COLUMNS.filter((c) => cols.includes(c.key));
+  if (!deals.length) return <p className="rounded-md border bg-card p-8 text-center text-sm text-muted-foreground">No deals here yet.</p>;
+  return (
+    <div className="overflow-x-auto rounded-md border bg-card">
+      <table className="w-full text-sm">
+        <thead className="border-b text-left text-[11px] uppercase tracking-widest text-muted-foreground">
+          <tr>
+            <th className="px-4 py-3 font-medium">Deal</th>
+            {shown.map((c) => <th key={c.key} className={`px-4 py-3 font-medium ${["type", "stage"].includes(c.key) ? "" : "text-right"}`}>{c.label}</th>)}
+          </tr>
+        </thead>
+        <tbody>
+          {deals.map((d) => {
+            const { b, r, gap, days } = metrics(d);
+            const cell: Record<ColumnKey, React.ReactNode> = {
+              type: d.propertyType,
+              stage: <StageBadge stage={d.stage} />,
+              days: <span className={isOpen(d.stage) && days >= stall ? "text-warning" : ""}>{isOpen(d.stage) ? `${days}d` : "—"}</span>,
+              price: usd(d.assumptions.price, true),
+              perUnit: usd(d.assumptions.price / (d.assumptions.units || 1), true),
+              brokerCap: <span className="text-muted-foreground">{pct(b / d.assumptions.price, 2)}</span>,
+              cap: pct(r.capRate, 2),
+              gap: <span className={gap < 0 ? "text-destructive" : "text-positive"}>{usd(gap, true)}</span>,
+              dscr: <span className={r.dscr < 1.25 ? "text-destructive" : ""}>{r.dscr.toFixed(2)}x</span>,
+              irr: <span className={r.irr < d.targetIrr ? "text-warning" : "text-positive"}>{pct(r.irr)}</span>,
+              updated: <span className="text-muted-foreground">{d.updatedAt}</span>,
+            };
+            return (
+              <tr key={d.id} className="border-b last:border-0 hover:bg-muted/60">
+                <td className="px-4 py-3">
+                  <Link to="/deals/$dealId" params={{ dealId: d.id }} className="font-medium hover:underline">{d.name}</Link>
+                  <div className="text-xs text-muted-foreground">{d.market} · {d.assumptions.units} units{!d.canEdit && " · shared with you"}</div>
+                </td>
+                {shown.map((c) => <td key={c.key} className={`px-4 py-3 ${["type", "stage"].includes(c.key) ? "" : "num text-right"}`}>{cell[c.key]}</td>)}
               </tr>
-            </thead>
-            <tbody>
-              {deals.map((d) => {
-                const b = sumBy(d.lines, "broker").noi;
-                const r = analyze(d.lines, d.assumptions, d.adjustments);
-                const gap = r.noi - b;
+            );
+          })}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
+function Board({ deals, stages, stall, onMove }: { deals: Deal[]; stages: string[]; stall: number; onMove: (id: string, stage: string) => void }) {
+  const [over, setOver] = useState<string | null>(null);
+  return (
+    <div className="flex gap-3 overflow-x-auto pb-4">
+      {stages.map((s) => {
+        const list = deals.filter((d) => d.stage === s);
+        return (
+          <div key={s} onDragOver={(e) => { e.preventDefault(); setOver(s); }} onDragLeave={() => setOver(null)}
+            onDrop={(e) => { e.preventDefault(); setOver(null); const id = e.dataTransfer.getData("text/plain"); if (id) onMove(id, s); }}
+            className={`flex w-64 shrink-0 flex-col rounded-md border p-2 ${over === s ? "bg-accent/40" : "bg-muted/40"}`}>
+            <div className="flex items-center justify-between px-1 pb-2 text-xs uppercase tracking-widest text-muted-foreground">
+              <span>{s}</span><span className="num">{list.length} · {usd(list.reduce((a, d) => a + d.assumptions.price, 0), true)}</span>
+            </div>
+            <div className="flex min-h-24 flex-col gap-2">
+              {list.map((d) => {
+                const { r, days } = metrics(d);
                 return (
-                  <tr key={d.id} className="border-b last:border-0 hover:bg-muted/60">
-                    <td className="px-4 py-3">
-                      <Link to="/deals/$dealId" params={{ dealId: d.id }} className="font-medium hover:underline">{d.name}</Link>
-                      <div className="text-xs text-muted-foreground">{d.market} · {d.assumptions.units} units</div>
-                    </td>
-                    <td className="px-4 py-3"><StageBadge stage={d.stage} /></td>
-                    <td className="num px-4 py-3 text-right">{usd(d.assumptions.price, true)}</td>
-                    <td className="num px-4 py-3 text-right text-muted-foreground">{pct(b / d.assumptions.price, 2)}</td>
-                    <td className="num px-4 py-3 text-right">{pct(r.capRate, 2)}</td>
-                    <td className={`num px-4 py-3 text-right ${gap < 0 ? "text-destructive" : "text-positive"}`}>{usd(gap, true)}</td>
-                    <td className={`num px-4 py-3 text-right ${r.irr < d.targetIrr ? "text-warning" : "text-positive"}`}>{pct(r.irr)}</td>
-                  </tr>
+                  <div key={d.id} draggable={d.canEdit} onDragStart={(e) => e.dataTransfer.setData("text/plain", d.id)}
+                    className="cursor-grab rounded border bg-card p-3 text-sm shadow-sm active:cursor-grabbing">
+                    <Link to="/deals/$dealId" params={{ dealId: d.id }} className="font-medium hover:underline">{d.name}</Link>
+                    <div className="text-xs text-muted-foreground">{d.propertyType} · {d.market}</div>
+                    <div className="num mt-2 flex justify-between text-xs">
+                      <span>{usd(d.assumptions.price, true)}</span>
+                      <span className={r.irr < d.targetIrr ? "text-warning" : "text-positive"}>{pct(r.irr)} IRR</span>
+                    </div>
+                    {isOpen(s) && <div className={`mt-1 text-xs ${days >= stall ? "text-warning" : "text-muted-foreground"}`}>{days} days in stage{days >= stall ? " · stalled" : ""}</div>}
+                  </div>
                 );
               })}
-            </tbody>
-          </table>
-        </div>
-        <p className="mt-3 text-xs text-muted-foreground">NOI gap = your underwritten NOI minus the broker's pro forma NOI, after diligence adjustments.</p>
-      </div>
+            </div>
+          </div>
+        );
+      })}
     </div>
   );
 }
 
 function NewDeal() {
   const { create } = useDeals();
+  const { settings } = useWorkspace();
   const nav = useNavigate();
   const [name, setName] = useState("");
   const [market, setMarket] = useState("");
+  const [type, setType] = useState(settings.propertyTypes[0] ?? "Multifamily");
   return (
     <Dialog>
       <DialogTrigger asChild><Button>New deal</Button></DialogTrigger>
@@ -91,11 +219,14 @@ function NewDeal() {
         <form className="space-y-3" onSubmit={async (e) => {
           e.preventDefault();
           if (!name.trim()) return;
-          const id = await create(name.trim(), market.trim());
+          const id = await create(name.trim(), market.trim(), type);
           if (id) nav({ to: "/deals/$dealId", params: { dealId: id } });
         }}>
           <Input placeholder="Property name" value={name} onChange={(e) => setName(e.target.value)} />
           <Input placeholder="Market (e.g. Dayton, OH)" value={market} onChange={(e) => setMarket(e.target.value)} />
+          <select value={type} onChange={(e) => setType(e.target.value)} className="h-10 w-full rounded-md border bg-card px-3 text-sm">
+            {settings.propertyTypes.map((t) => <option key={t}>{t}</option>)}
+          </select>
           <Button type="submit" className="w-full">Create and open</Button>
         </form>
       </DialogContent>

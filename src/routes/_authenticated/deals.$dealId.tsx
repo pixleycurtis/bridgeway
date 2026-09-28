@@ -147,7 +147,7 @@ function Reconcile({ deal, set, onNext }: { deal: Deal; set: (p: Partial<Deal>) 
     <div className="grid gap-8 xl:grid-cols-[1fr_320px]">
       <div>
         <h2 className="font-display text-2xl">Broker said vs. the books</h2>
-        <p className="mt-1 max-w-2xl text-sm text-muted-foreground">Enter the OM pro forma and trailing-12 side by side. Anything off by {Math.round(th * 100)}%+ gets flagged, and your underwrite column is what drives returns.</p>
+        <p className="mt-1 text-xs text-muted-foreground">Flag threshold: {Math.round(th * 100)}%</p>
         <div className="mt-5 overflow-x-auto rounded-md border bg-card">
           <table className="w-full text-sm">
             <thead className="border-b text-[11px] uppercase tracking-widest text-muted-foreground">
@@ -327,7 +327,6 @@ We remain committed to closing on the current timeline and look forward to your 
     <div className="grid gap-8 xl:grid-cols-[1fr_1fr]">
       <div>
         <h2 className="font-display text-2xl">Diligence findings</h2>
-        <p className="mt-1 text-sm text-muted-foreground">Log what diligence turned up. Recurring items hit NOI every year; one-time items add to your equity at close.</p>
         <form className="mt-4 flex flex-wrap gap-2" onSubmit={(e) => {
           e.preventDefault();
           const n = parseFloat(amount);
@@ -377,7 +376,6 @@ We remain committed to closing on the current timeline and look forward to your 
       </div>
       <div>
         <h2 className="font-display text-2xl">Retrade letter</h2>
-        <p className="mt-1 text-sm text-muted-foreground">Drafted from your findings. Edit before sending.</p>
         <Textarea key={letter} defaultValue={letter} className="mt-4 min-h-[420px] bg-card font-display text-base leading-relaxed" />
         <div className="mt-3 flex justify-end gap-2">
           <Button variant="outline" size="sm" type="button" onClick={() => { navigator.clipboard.writeText(letter); toast.success("Letter copied"); }}>Copy</Button>

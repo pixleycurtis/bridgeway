@@ -15,7 +15,6 @@ export function AppShell({ children }: { children: ReactNode }) {
             {logoUrl && <img src={logoUrl} alt="" className="h-8 w-8 rounded bg-card object-contain p-0.5" />}
             <span className="truncate font-display text-2xl tracking-tight text-sidebar-accent-foreground">{firm?.name ?? "Keystone"}</span>
           </Link>
-          <p className="mt-1 text-xs text-sidebar-foreground/60">Keystone · buy-side workspace</p>
         </div>
         <nav className="flex flex-col gap-0.5 px-3 text-sm">
           <NavItem to="/today">Today</NavItem>
@@ -46,6 +45,7 @@ export function AppShell({ children }: { children: ReactNode }) {
           <Link to="/today" className="text-sm text-muted-foreground">Today</Link>
           <Link to="/" className="text-sm text-muted-foreground">Pipeline</Link>
           <Link to="/portfolio" className="text-sm text-muted-foreground">Portfolio</Link>
+          <Link to="/insights" className="text-sm text-muted-foreground">Insights</Link>
           <Link to="/settings" className="text-sm text-muted-foreground">Settings</Link>
           <button onClick={signOut} className="ml-auto text-sm text-muted-foreground">Sign out</button>
         </header>

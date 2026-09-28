@@ -121,19 +121,6 @@ export function useTaskStats(dealIds: string[]) {
   useEffect(() => {
     const ids = key ? key.split(",") : [];
     if (!ids.length) { setStats({}); return; }
-    (async () => {
-      const { data } = await supabase.from("deal_tasks").select("deal_id, kind, done, due_date").in("deal_id", ids);
-      const next: Record<string, { open: number; overdue: number }> = {};
-      const today = new Date().toISOString().slice(0, 10);
-      for (const r of (data ?? []) as { deal_id: string; kind: string; done: boolean; due_date: string | null }[]) {
-        const s = (next[r.deal_id] ??= { open: 0, overdue: 0 });
-        if (!r.done && r.kind === "task") {
-          s.open++;
-          if (r.due_date && r.due_date < today) s.overdue++;
-        }
-      }
-      setStats(next);
-    })();
     const refresh = () => { void (async () => {
       const { data } = await supabase.from("deal_tasks").select("deal_id, kind, done, due_date").in("deal_id", ids);
       const next: Record<string, { open: number; overdue: number }> = {};
@@ -146,6 +133,7 @@ export function useTaskStats(dealIds: string[]) {
       }
       setStats(next);
     })(); };
+    refresh();
     window.addEventListener("keystone:actions-changed", refresh);
     return () => window.removeEventListener("keystone:actions-changed", refresh);
   }, [key]);

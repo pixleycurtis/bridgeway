@@ -201,7 +201,6 @@ function Insights() {
 
           <section>
             <h2 className="font-display text-2xl">Where brokers miss</h2>
-            <p className="mt-1 text-sm text-muted-foreground">Average gap between the OM and the trailing-12.</p>
             <div className="mt-4 divide-y rounded-md border bg-card">
               {misses.map((r) => {
                 const bad = r.kind === "expense" ? r.avg > 0 : r.avg < 0;

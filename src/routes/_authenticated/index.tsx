@@ -7,6 +7,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { useDeals, type Deal } from "@/lib/deals-store";
 import { analyze, pct, sumBy, usd } from "@/lib/finance";
+import { useTaskStats } from "@/lib/deal-tables";
 import { useWorkspace } from "@/lib/workspace";
 import { PIPELINE_COLUMNS, allStages, daysInStage, isOpen, type ColumnKey } from "@/lib/firm-settings";
 
@@ -49,6 +50,8 @@ function Pipeline() {
   const inTab = filtered.filter((d) => tab === "All" ? true : tab === "Active" ? isOpen(d.stage) : d.stage === tab);
   const active = filtered.filter((d) => isOpen(d.stage));
   const stalled = active.filter((d) => daysInStage(d.stageHistory, d.createdAt) >= settings.stallDays);
+  const taskStats = useTaskStats(deals.map((d) => d.id));
+  const overdueTotal = Object.values(taskStats).reduce((s, x) => s + x.overdue, 0);
   const count = (s: string) => filtered.filter((d) => (s === "All" ? true : s === "Active" ? isOpen(d.stage) : d.stage === s)).length;
 
   return (
@@ -58,6 +61,7 @@ function Pipeline() {
         <Stat label="Active deals" value={String(active.length)} />
         <Stat label="Active volume" value={usd(active.reduce((s, d) => s + d.assumptions.price, 0), true)} />
         <Stat label={`Stalled ${settings.stallDays}+ days`} value={String(stalled.length)} tone={stalled.length ? "warn" : undefined} />
+        <Stat label="Overdue tasks" value={String(overdueTotal)} tone={overdueTotal ? "neg" : undefined} />
         <Stat label="Closed" value={String(count("Closed"))} />
         <Stat label="Passed" value={String(count("Passed"))} />
       </div>
@@ -102,7 +106,7 @@ function Pipeline() {
       </div>
 
       <div className="px-6 pb-12 pt-4 md:px-10">
-        {view === "table" ? <DealTable deals={inTab} cols={cols} stall={settings.stallDays} /> : <Board deals={filtered} stages={stages} stall={settings.stallDays} onMove={(id, stage) => update(id, { stage })} />}
+        {view === "table" ? <DealTable deals={inTab} cols={cols} stall={settings.stallDays} taskStats={taskStats} /> : <Board deals={filtered} stages={stages} stall={settings.stallDays} taskStats={taskStats} onMove={(id, stage) => update(id, { stage })} />}
       </div>
     </div>
   );
@@ -123,7 +127,7 @@ function metrics(d: Deal) {
   return { b, r, gap: r.noi - b, days: daysInStage(d.stageHistory, d.createdAt) };
 }
 
-function DealTable({ deals, cols, stall }: { deals: Deal[]; cols: ColumnKey[]; stall: number }) {
+function DealTable({ deals, cols, stall, taskStats }: { deals: Deal[]; cols: ColumnKey[]; stall: number; taskStats: Record<string, { open: number; overdue: number }> }) {
   const shown = PIPELINE_COLUMNS.filter((c) => cols.includes(c.key));
   if (!deals.length) return <p className="rounded-md border bg-card p-8 text-center text-sm text-muted-foreground">No deals here yet.</p>;
   return (
@@ -149,6 +153,13 @@ function DealTable({ deals, cols, stall }: { deals: Deal[]; cols: ColumnKey[]; s
               gap: <span className={gap < 0 ? "text-destructive" : "text-positive"}>{usd(gap, true)}</span>,
               dscr: <span className={r.dscr < 1.25 ? "text-destructive" : ""}>{r.dscr.toFixed(2)}x</span>,
               irr: <span className={r.irr < d.targetIrr ? "text-warning" : "text-positive"}>{pct(r.irr)}</span>,
+              tasks: (() => {
+                const s = taskStats[d.id];
+                if (!s || !s.open) return <span className="text-muted-foreground">—</span>;
+                return s.overdue
+                  ? <span className="text-destructive">{s.open} open · {s.overdue} overdue</span>
+                  : <span>{s.open} open</span>;
+              })(),
               updated: <span className="text-muted-foreground">{d.updatedAt}</span>,
             };
             return (
@@ -167,7 +178,7 @@ function DealTable({ deals, cols, stall }: { deals: Deal[]; cols: ColumnKey[]; s
   );
 }
 
-function Board({ deals, stages, stall, onMove }: { deals: Deal[]; stages: string[]; stall: number; onMove: (id: string, stage: string) => void }) {
+function Board({ deals, stages, stall, taskStats, onMove }: { deals: Deal[]; stages: string[]; stall: number; taskStats: Record<string, { open: number; overdue: number }>; onMove: (id: string, stage: string) => void }) {
   const [over, setOver] = useState<string | null>(null);
   return (
     <div className="flex gap-3 overflow-x-auto pb-4">
@@ -193,6 +204,7 @@ function Board({ deals, stages, stall, onMove }: { deals: Deal[]; stages: string
                       <span className={r.irr < d.targetIrr ? "text-warning" : "text-positive"}>{pct(r.irr)} IRR</span>
                     </div>
                     {isOpen(s) && <div className={`mt-1 text-xs ${days >= stall ? "text-warning" : "text-muted-foreground"}`}>{days} days in stage{days >= stall ? " · stalled" : ""}</div>}
+                    {(() => { const od = taskStats[d.id]?.overdue ?? 0; return od ? <div className="mt-0.5 text-xs text-destructive">{od} overdue task{od > 1 ? "s" : ""}</div> : null; })()}
                   </div>
                 );
               })}

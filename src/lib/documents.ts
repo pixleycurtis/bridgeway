@@ -4,10 +4,11 @@ import type { Firm } from "./workspace";
 
 export type TableKey = "summary" | "income" | "returns" | "cashflow" | "sensitivity" | "debt" | "findings";
 export interface Section { id: string; title: string; body: string; table?: TableKey | null }
-export type DocKind = "memo" | "loi" | "lender" | "retrade" | "ddlist";
+export type DocKind = "memo" | "loi" | "lender" | "retrade" | "ddlist" | "ic";
 
 export const DOC_KINDS: { kind: DocKind; title: string; audience: string; blurb: string }[] = [
   { kind: "memo", title: "Investment summary", audience: "Partners & investors", blurb: "The deal on a page: thesis, numbers, returns, risks." },
+  { kind: "ic", title: "Committee memo", audience: "Investment committee", blurb: "One-page sign-off summary: returns, risks, diligence, and the ask." },
   { kind: "loi", title: "Letter of intent", audience: "Seller", blurb: "Price, deposit, diligence period, and closing terms." },
   { kind: "lender", title: "Lender package", audience: "Lender", blurb: "Loan request, operating history, debt coverage, cash flows." },
   { kind: "ddlist", title: "Due diligence request list", audience: "Seller", blurb: "Everything you need from the seller during diligence." },
@@ -76,6 +77,13 @@ export function defaultSections(kind: DocKind, d: Deal, firm: Firm | null): Sect
         s("Financial", `• Trailing-12 and trailing-3 operating statements, month by month\n• Current certified rent roll with lease start/end dates and deposits\n• Two prior years of annual operating statements\n• General ledger for the trailing 12 months\n• Utility bills for the trailing 12 months\n• Real estate tax bills and any pending appeals`),
         s("Physical", `• Capital expenditure history for the past three years\n• Any property condition, environmental, or engineering reports\n• Roof, HVAC, and major system warranties\n• Open work orders and unit turn schedule`),
         s("Legal & other", `• Service, vendor, and management contracts\n• Insurance loss runs for the past five years\n• Certificate of occupancy and any open code violations\n• Pending or threatened litigation\n• Title policy and survey`),
+      ];
+    case "ic":
+      return [
+        s("Recommendation", `${buyer} seeks investment committee approval to acquire ${d.name}, a ${a.units}-unit property at ${where}, for ${usd(a.price)} at a ${pct(r.capRate, 2)} going-in cap rate. Our underwritten Year-1 NOI is ${usd(r.noi)}.`, "summary"),
+        s("Returns", `Assuming ${pct(a.ltv, 0)} LTV financing at ${pct(a.rate, 2)} over ${a.amortYears} years, the deal produces ${pct(r.cashOnCash)} Year-1 cash-on-cash, a ${r.dscr.toFixed(2)}x DSCR and a ${pct(r.irr)} levered IRR (${r.equityMultiple.toFixed(2)}x equity multiple) against our ${pct(d.targetIrr)} target over a ${a.holdYears}-year hold.`, "returns"),
+        s("Diligence & risk", `${d.adjustments.length ? `${d.adjustments.length} diligence finding${d.adjustments.length > 1 ? "s" : ""} valued at ${usd(oneTime + Math.round(annual / (r.capRate || 1)))} in total` : "No diligence findings to date"}. Key risks: expense growth above plan, exit cap expansion beyond ${pct(a.exitCap, 2)}, and capital program overruns on the ${usd(a.capex)} budget.`),
+        s("Financing status", `Loan request sized at ${usd(r.loan)} (${pct(a.ltv, 0)} LTV); term sheets are being compared against our underwrite before we go hard.`),
       ];
     case "retrade":
       return [

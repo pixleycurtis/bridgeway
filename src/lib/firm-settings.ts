@@ -16,6 +16,7 @@ export const PIPELINE_COLUMNS = [
   { key: "gap", label: "NOI gap" },
   { key: "dscr", label: "DSCR" },
   { key: "irr", label: "IRR" },
+  { key: "tasks", label: "Open tasks" },
   { key: "updated", label: "Updated" },
 ] as const;
 export type ColumnKey = (typeof PIPELINE_COLUMNS)[number]["key"];

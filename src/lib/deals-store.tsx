@@ -181,11 +181,26 @@ export function DealsProvider({ children }: { children: ReactNode }) {
     if (!firm) return null;
     const first = settings.stages[0] ?? "Screening";
     const d = settings.defaults;
+    const type = propertyType || settings.propertyTypes[0] || "Multifamily";
+    // Prefill from the assumptions library: exact market+type match, then type-only row.
+    const { data: prefRows } = await supabase
+      .from("firm_defaults")
+      .select("market, defaults")
+      .eq("property_type", type)
+      .eq("firm_id", firm.id);
+    const pref = ((prefRows ?? []) as { market: string; defaults: Partial<Assumptions> }[]).find((r) => r.market === market) ?? ((prefRows ?? []) as { market: string; defaults: Partial<Assumptions> }[]).find((r) => !r.market);
     const row = {
       firm_id: firm.id, created_by: user.id, name, market, stage: first, target_irr: settings.targetIrr,
-      property_type: propertyType || settings.propertyTypes[0] || "Multifamily", asking_price: 3_000_000,
+      property_type: type, asking_price: 3_000_000,
       stage_history: [{ stage: first, at: new Date().toISOString() }],
-      assumptions: { ...baseA(3_000_000, 24), ltv: d.ltv, rate: d.rate, exitCap: d.exitCap, holdYears: d.holdYears }, lines: lines(Array(10).fill(0), Array(10).fill(0), Array(10).fill(0)), adjustments: [],
+      assumptions: {
+        ...baseA(3_000_000, 24),
+        ltv: pref?.defaults?.ltv ?? d.ltv,
+        rate: pref?.defaults?.rate ?? d.rate,
+        exitCap: pref?.defaults?.exitCap ?? d.exitCap,
+        holdYears: pref?.defaults?.holdYears ?? d.holdYears,
+      },
+      lines: lines(Array(10).fill(0), Array(10).fill(0), Array(10).fill(0)), adjustments: [],
     };
     const { data, error } = await supabase.from("deals").insert(row as never).select().single();
     if (error || !data) { toast.error(error?.message ?? "Couldn't create deal"); return null; }

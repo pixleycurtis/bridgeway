@@ -6,3 +6,12 @@
 - [x] Pipeline stage tabs + board, filters, column picker
 - [x] Insights: five factors, markets, speed, retrades, pass reasons, property-type filters
 - [x] Firm-defined stages, property types, default targets
+
+## Active: 6 new buyer-facing sections (user request 2026-09-28)
+- [x] Fix "Uncaught undefined" / hydration crash blanking preview (not reproducible on fresh load; ErrorComponent hardened in __root.tsx)
+- [x] 1. Deal timeline & tasks (per-deal key dates, assign tasks, overdue on pipeline board)
+- [x] 2. Document vault / data room (DD request tracker + files per deal)
+- [x] 3. Assumptions library (firm-wide defaults per market + property type, prefill new deals)
+- [x] 4. Portfolio / actuals vs. underwrite (closed deals, quarterly actuals vs plan)
+- [x] 5. Lender & quote tracker (term sheet comparison per deal)
+- [x] 6. Investor/committee memo (generated from deal data in document studio)

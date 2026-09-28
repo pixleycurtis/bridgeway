@@ -50,6 +50,8 @@ function Pipeline() {
   const inTab = filtered.filter((d) => tab === "All" ? true : tab === "Active" ? isOpen(d.stage) : d.stage === tab);
   const active = filtered.filter((d) => isOpen(d.stage));
   const stalled = active.filter((d) => daysInStage(d.stageHistory, d.createdAt) >= settings.stallDays);
+  const taskStats = useTaskStats(deals.map((d) => d.id));
+  const overdueTotal = Object.values(taskStats).reduce((s, x) => s + x.overdue, 0);
   const count = (s: string) => filtered.filter((d) => (s === "All" ? true : s === "Active" ? isOpen(d.stage) : d.stage === s)).length;
 
   return (
@@ -59,6 +61,7 @@ function Pipeline() {
         <Stat label="Active deals" value={String(active.length)} />
         <Stat label="Active volume" value={usd(active.reduce((s, d) => s + d.assumptions.price, 0), true)} />
         <Stat label={`Stalled ${settings.stallDays}+ days`} value={String(stalled.length)} tone={stalled.length ? "warn" : undefined} />
+        <Stat label="Overdue tasks" value={String(overdueTotal)} tone={overdueTotal ? "neg" : undefined} />
         <Stat label="Closed" value={String(count("Closed"))} />
         <Stat label="Passed" value={String(count("Passed"))} />
       </div>

@@ -43,6 +43,7 @@ export function AppShell({ children }: { children: ReactNode }) {
         <header className="flex items-center gap-4 border-b px-4 py-3 md:hidden">
           <Link to="/" className="font-display text-xl">{firm?.name ?? "Keystone"}</Link>
           <Link to="/" className="text-sm text-muted-foreground">Pipeline</Link>
+          <Link to="/portfolio" className="text-sm text-muted-foreground">Portfolio</Link>
           <Link to="/settings" className="text-sm text-muted-foreground">Settings</Link>
           <button onClick={signOut} className="ml-auto text-sm text-muted-foreground">Sign out</button>
         </header>
@@ -52,7 +53,7 @@ export function AppShell({ children }: { children: ReactNode }) {
   );
 }
 
-function NavItem({ to, children }: { to: "/" | "/insights" | "/settings"; children: ReactNode }) {
+function NavItem({ to, children }: { to: "/" | "/portfolio" | "/insights" | "/settings"; children: ReactNode }) {
   return (
     <Link to={to} activeOptions={{ exact: true }}
       className="rounded px-2 py-1.5 text-sidebar-foreground/80 hover:bg-sidebar-accent"

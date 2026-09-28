@@ -92,7 +92,7 @@ export function useDealRows<T>(table: string, dealId: string | undefined, order 
     if (!dealId) return;
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const fromAny = (supabase.from as any)(table);
-    const { data, error } = await fromAny.insert({ ...values, deal_id: dealId, firm_id: firm?.id }).select().single();
+    const { data, error } = await fromAny.insert({ ...values, deal_id: dealId, ...(["deal_tasks", "deal_dd_items", "deal_lender_quotes", "deal_actuals"].includes(table) ? { firm_id: firm?.id } : {}) }).select().single();
     if (error || !data) { toast.error(error?.message ?? "Couldn't save"); return; }
     setRows((rs) => [...rs, camelize(data as RowShape) as unknown as T]);
     if (table === "deal_tasks" || table === "deal_dd_items") signalActionsChanged();

@@ -20,6 +20,8 @@ export const Route = createFileRoute("/_authenticated/settings")({
       { name: "description", content: "Brand your documents, manage your team, and teach Keystone your firm's writing style." },
       { property: "og:title", content: "Firm settings — Keystone" },
       { property: "og:description", content: "Brand your documents, manage your team, and teach Keystone your firm's writing style." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
     ],
   }),
   component: Settings,

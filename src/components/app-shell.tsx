@@ -40,7 +40,7 @@ export function AppShell({ children }: { children: ReactNode }) {
         </div>
       </aside>
       <div className="flex min-w-0 flex-1 flex-col">
-        <header className="flex items-center gap-4 border-b px-4 py-3 md:hidden">
+        <header className="flex flex-wrap items-center gap-x-4 gap-y-2 border-b px-4 py-3 md:hidden">
           <Link to="/" className="font-display text-xl">{firm?.name ?? "Keystone"}</Link>
           <Link to="/today" className="text-sm text-muted-foreground">Today</Link>
           <Link to="/" className="text-sm text-muted-foreground">Pipeline</Link>

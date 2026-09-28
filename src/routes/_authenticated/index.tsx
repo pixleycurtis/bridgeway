@@ -178,7 +178,7 @@ function DealTable({ deals, cols, stall, taskStats }: { deals: Deal[]; cols: Col
   );
 }
 
-function Board({ deals, stages, stall, onMove }: { deals: Deal[]; stages: string[]; stall: number; onMove: (id: string, stage: string) => void }) {
+function Board({ deals, stages, stall, taskStats, onMove }: { deals: Deal[]; stages: string[]; stall: number; taskStats: Record<string, { open: number; overdue: number }>; onMove: (id: string, stage: string) => void }) {
   const [over, setOver] = useState<string | null>(null);
   return (
     <div className="flex gap-3 overflow-x-auto pb-4">
@@ -204,6 +204,7 @@ function Board({ deals, stages, stall, onMove }: { deals: Deal[]; stages: string
                       <span className={r.irr < d.targetIrr ? "text-warning" : "text-positive"}>{pct(r.irr)} IRR</span>
                     </div>
                     {isOpen(s) && <div className={`mt-1 text-xs ${days >= stall ? "text-warning" : "text-muted-foreground"}`}>{days} days in stage{days >= stall ? " · stalled" : ""}</div>}
+                    {taskStats[d.id]?.overdue ? <div className="mt-0.5 text-xs text-destructive">{taskStats[d.id].overdue} overdue task{taskStats[d.id].overdue > 1 ? "s" : ""}</div> : null}
                   </div>
                 );
               })}

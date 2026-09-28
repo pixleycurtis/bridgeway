@@ -19,6 +19,7 @@ export function AppShell({ children }: { children: ReactNode }) {
         </div>
         <nav className="flex flex-col gap-0.5 px-3 text-sm">
           <NavItem to="/">Pipeline</NavItem>
+          <NavItem to="/portfolio">Portfolio</NavItem>
           <NavItem to="/insights">Insights</NavItem>
           <NavItem to="/settings">Firm settings</NavItem>
         </nav>

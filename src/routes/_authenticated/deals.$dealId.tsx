@@ -9,6 +9,9 @@ import { useDeals, type Deal } from "@/lib/deals-store";
 import { analyze, pct, solvePrice, sumBy, usd, type Assumptions, type LineItem } from "@/lib/finance";
 import { DocumentsStudio } from "@/components/documents-studio";
 import { ShareDialog, UploadPanel } from "@/components/deal-extras";
+import { DealSchedule } from "@/components/deal-schedule";
+import { DealVault } from "@/components/deal-vault";
+import { LenderQuotes } from "@/components/lender-quotes";
 import { useWorkspace } from "@/lib/workspace";
 import { PASS_REASONS, allStages } from "@/lib/firm-settings";
 
@@ -28,7 +31,10 @@ const STEPS = [
   { id: "reconcile", n: "01", label: "Reconcile", hint: "Broker OM vs. T-12" },
   { id: "underwrite", n: "02", label: "Underwrite", hint: "Assumptions & returns" },
   { id: "retrade", n: "03", label: "Diligence & retrade", hint: "Findings to price" },
-  { id: "documents", n: "04", label: "Documents", hint: "Branded deliverables" },
+  { id: "schedule", n: "04", label: "Schedule", hint: "Key dates & tasks" },
+  { id: "vault", n: "05", label: "Data room", hint: "DD tracker & files" },
+  { id: "financing", n: "06", label: "Financing", hint: "Lender quotes" },
+  { id: "documents", n: "07", label: "Documents", hint: "Branded deliverables" },
 ] as const;
 type StepId = (typeof STEPS)[number]["id"];
 
@@ -94,11 +100,11 @@ function DealPage() {
         </nav>
       </div>
       <div className="px-6 py-8 md:px-10">
-        {current === "documents" ? <DocumentsStudio deal={deal} /> : (
+        {current === "documents" ? <DocumentsStudio deal={deal} /> : current === "schedule" ? <DealSchedule deal={deal} /> : current === "vault" ? <DealVault deal={deal} /> : current === "financing" ? <LenderQuotes deal={deal} /> : (
           <fieldset disabled={!deal.canEdit} className="min-w-0">
             {current === "reconcile" && <Reconcile deal={deal} set={set} onNext={() => setStep("underwrite")} />}
             {current === "underwrite" && <Underwrite deal={deal} set={set} onNext={() => setStep("retrade")} />}
-            {current === "retrade" && <Retrade deal={deal} set={set} onNext={() => setStep("documents")} />}
+            {current === "retrade" && <Retrade deal={deal} set={set} onNext={() => setStep("schedule")} />}
           </fieldset>
         )}
       </div>

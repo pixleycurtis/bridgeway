@@ -127,7 +127,7 @@ function metrics(d: Deal) {
   return { b, r, gap: r.noi - b, days: daysInStage(d.stageHistory, d.createdAt) };
 }
 
-function DealTable({ deals, cols, stall }: { deals: Deal[]; cols: ColumnKey[]; stall: number }) {
+function DealTable({ deals, cols, stall, taskStats }: { deals: Deal[]; cols: ColumnKey[]; stall: number; taskStats: Record<string, { open: number; overdue: number }> }) {
   const shown = PIPELINE_COLUMNS.filter((c) => cols.includes(c.key));
   if (!deals.length) return <p className="rounded-md border bg-card p-8 text-center text-sm text-muted-foreground">No deals here yet.</p>;
   return (
@@ -153,6 +153,13 @@ function DealTable({ deals, cols, stall }: { deals: Deal[]; cols: ColumnKey[]; s
               gap: <span className={gap < 0 ? "text-destructive" : "text-positive"}>{usd(gap, true)}</span>,
               dscr: <span className={r.dscr < 1.25 ? "text-destructive" : ""}>{r.dscr.toFixed(2)}x</span>,
               irr: <span className={r.irr < d.targetIrr ? "text-warning" : "text-positive"}>{pct(r.irr)}</span>,
+              tasks: (() => {
+                const s = taskStats[d.id];
+                if (!s || !s.open) return <span className="text-muted-foreground">—</span>;
+                return s.overdue
+                  ? <span className="text-destructive">{s.open} open · {s.overdue} overdue</span>
+                  : <span>{s.open} open</span>;
+              })(),
               updated: <span className="text-muted-foreground">{d.updatedAt}</span>,
             };
             return (

@@ -9,86 +9,91 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
-import { Route as IndexRouteImport } from './routes/index'
-import { Route as InsightsRouteImport } from './routes/insights'
-import { Route as DealsDealIdRouteImport } from './routes/deals.$dealId'
+import { Route as AuthenticatedIndexRouteImport } from './routes/_authenticated/index'
+import { Route as AuthenticatedInsightsRouteImport } from './routes/_authenticated/insights'
+import { Route as AuthenticatedDealsDealIdRouteImport } from './routes/_authenticated/deals.$dealId'
 
-const IndexRoute = IndexRouteImport.update({
-  id: '/',
+const AuthenticatedIndexRoute = AuthenticatedIndexRouteImport.update({
+  id: '/_authenticated/',
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
-const InsightsRoute = InsightsRouteImport.update({
-  id: '/insights',
+const AuthenticatedInsightsRoute = AuthenticatedInsightsRouteImport.update({
+  id: '/_authenticated/insights',
   path: '/insights',
   getParentRoute: () => rootRouteImport,
 } as any)
-const DealsDealIdRoute = DealsDealIdRouteImport.update({
-  id: '/deals/$dealId',
-  path: '/deals/$dealId',
-  getParentRoute: () => rootRouteImport,
-} as any)
+const AuthenticatedDealsDealIdRoute =
+  AuthenticatedDealsDealIdRouteImport.update({
+    id: '/_authenticated/deals/$dealId',
+    path: '/deals/$dealId',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 
 export interface FileRoutesByFullPath {
-  '/': typeof IndexRoute
-  '/insights': typeof InsightsRoute
-  '/deals/$dealId': typeof DealsDealIdRoute
+  '/insights': typeof AuthenticatedInsightsRoute
+  '/': typeof AuthenticatedIndexRoute
+  '/deals/$dealId': typeof AuthenticatedDealsDealIdRoute
 }
 export interface FileRoutesByTo {
-  '/': typeof IndexRoute
-  '/insights': typeof InsightsRoute
-  '/deals/$dealId': typeof DealsDealIdRoute
+  '/insights': typeof AuthenticatedInsightsRoute
+  '/': typeof AuthenticatedIndexRoute
+  '/deals/$dealId': typeof AuthenticatedDealsDealIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
-  '/': typeof IndexRoute
-  '/insights': typeof InsightsRoute
-  '/deals/$dealId': typeof DealsDealIdRoute
+  '/_authenticated/insights': typeof AuthenticatedInsightsRoute
+  '/_authenticated/': typeof AuthenticatedIndexRoute
+  '/_authenticated/deals/$dealId': typeof AuthenticatedDealsDealIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/insights' | '/deals/$dealId'
+  fullPaths: '/insights' | '/' | '/deals/$dealId'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/insights' | '/deals/$dealId'
-  id: '__root__' | '/' | '/insights' | '/deals/$dealId'
+  to: '/insights' | '/' | '/deals/$dealId'
+  id:
+    | '__root__'
+    | '/_authenticated/insights'
+    | '/_authenticated/'
+    | '/_authenticated/deals/$dealId'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
-  IndexRoute: typeof IndexRoute
-  InsightsRoute: typeof InsightsRoute
-  DealsDealIdRoute: typeof DealsDealIdRoute
+  AuthenticatedInsightsRoute: typeof AuthenticatedInsightsRoute
+  AuthenticatedIndexRoute: typeof AuthenticatedIndexRoute
+  AuthenticatedDealsDealIdRoute: typeof AuthenticatedDealsDealIdRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/': {
-      id: '/'
+    '/_authenticated/': {
+      id: '/_authenticated/'
       path: '/'
       fullPath: '/'
-      preLoaderRoute: typeof IndexRouteImport
+      preLoaderRoute: typeof AuthenticatedIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/insights': {
-      id: '/insights'
+    '/_authenticated/insights': {
+      id: '/_authenticated/insights'
       path: '/insights'
       fullPath: '/insights'
-      preLoaderRoute: typeof InsightsRouteImport
+      preLoaderRoute: typeof AuthenticatedInsightsRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/deals/$dealId': {
-      id: '/deals/$dealId'
+    '/_authenticated/deals/$dealId': {
+      id: '/_authenticated/deals/$dealId'
       path: '/deals/$dealId'
       fullPath: '/deals/$dealId'
-      preLoaderRoute: typeof DealsDealIdRouteImport
+      preLoaderRoute: typeof AuthenticatedDealsDealIdRouteImport
       parentRoute: typeof rootRouteImport
     }
   }
 }
 
 const rootRouteChildren: RootRouteChildren = {
-  IndexRoute: IndexRoute,
-  InsightsRoute: InsightsRoute,
-  DealsDealIdRoute: DealsDealIdRoute,
+  AuthenticatedInsightsRoute: AuthenticatedInsightsRoute,
+  AuthenticatedIndexRoute: AuthenticatedIndexRoute,
+  AuthenticatedDealsDealIdRoute: AuthenticatedDealsDealIdRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

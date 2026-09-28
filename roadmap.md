@@ -2,7 +2,7 @@
 - [x] Approved daily deal desk: remove redundant subtitles and step hints, improve empty states.
 - [x] Today: cross-deal task/date/DD queue with ownership filters and completion.
 - [x] Deal and pipeline: next action/blocker signals from real task and DD records.
-- [x] Trust pass: view-only file access, loading/error states, desktop/mobile verification.
+- [ ] Trust pass: loading/error states and desktop/mobile verified; invited-viewer file opening awaits a separate shared-party test account with an attached file.
 - [x] Move Schedule to step 01 and order the deal workspace from setup through documents.
 - [x] Pipeline, deal workspace (reconcile / underwrite / retrade), insights
 - [x] PDF/CSV upload that auto-fills OM + T-12 columns (AI extraction)

@@ -155,3 +155,12 @@
   }
   .num { font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
 }
+
+@media print {
+  @page { margin: 0.5in; }
+  body * { visibility: hidden; }
+  .print-doc, .print-doc * { visibility: visible; }
+  .print-doc { position: absolute; left: 0; top: 0; width: 100%; max-width: none; box-shadow: none; padding: 0; --tw-ring-shadow: 0 0 #0000; }
+  .print-doc .no-print { display: none !important; }
+  .print-doc textarea { border: 0; resize: none; }
+}

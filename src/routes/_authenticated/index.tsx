@@ -4,10 +4,10 @@ import { PageHeader, Stat, StageBadge } from "@/components/app-shell";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { blankDeal, useDeals } from "@/lib/deals-store";
+import { useDeals } from "@/lib/deals-store";
 import { analyze, pct, sumBy, usd } from "@/lib/finance";
 
-export const Route = createFileRoute("/")({
+export const Route = createFileRoute("/_authenticated/")({
   head: () => ({
     meta: [
       { title: "Pipeline — Keystone" },
@@ -79,7 +79,7 @@ function Pipeline() {
 }
 
 function NewDeal() {
-  const { add } = useDeals();
+  const { create } = useDeals();
   const nav = useNavigate();
   const [name, setName] = useState("");
   const [market, setMarket] = useState("");
@@ -88,12 +88,11 @@ function NewDeal() {
       <DialogTrigger asChild><Button>New deal</Button></DialogTrigger>
       <DialogContent>
         <DialogHeader><DialogTitle className="font-display text-2xl font-normal">Start a deal</DialogTitle></DialogHeader>
-        <form className="space-y-3" onSubmit={(e) => {
+        <form className="space-y-3" onSubmit={async (e) => {
           e.preventDefault();
           if (!name.trim()) return;
-          const d = blankDeal(name.trim(), market.trim());
-          add(d);
-          nav({ to: "/deals/$dealId", params: { dealId: d.id } });
+          const id = await create(name.trim(), market.trim());
+          if (id) nav({ to: "/deals/$dealId", params: { dealId: id } });
         }}>
           <Input placeholder="Property name" value={name} onChange={(e) => setName(e.target.value)} />
           <Input placeholder="Market (e.g. Dayton, OH)" value={market} onChange={(e) => setMarket(e.target.value)} />

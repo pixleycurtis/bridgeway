@@ -1,12 +1,17 @@
 import type React from "react";
-import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
+import { createContext, useContext, useEffect, useRef, useState, type ReactNode } from "react";
+import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
+import type { Json } from "@/integrations/supabase/types";
 import type { Adjustment, Assumptions, LineItem } from "./finance";
+import { useWorkspace } from "./workspace";
 
 export const STAGES = ["Screening", "Underwriting", "LOI", "Under contract", "Closed", "Passed"] as const;
 export type Stage = (typeof STAGES)[number];
 
 export interface Deal {
   id: string;
+  firmId: string;
   name: string;
   address: string;
   market: string;
@@ -16,6 +21,8 @@ export interface Deal {
   adjustments: Adjustment[];
   targetIrr: number;
   updatedAt: string;
+  /** true when the deal belongs to the viewer's firm; false for deals shared in (view-only). */
+  canEdit: boolean;
 }
 
 const lines = (b: number[], t: number[], u: number[]): LineItem[] => {
@@ -39,10 +46,10 @@ const baseA = (price: number, units: number): Assumptions => ({
   rentGrowth: 0.03, expenseGrowth: 0.03, exitCap: 0.065, holdYears: 5, sellPct: 0.02,
 });
 
-export const SEED: Deal[] = [
+type Seed = Omit<Deal, "id" | "firmId" | "canEdit" | "updatedAt">;
+const SEED: Seed[] = [
   {
-    id: "maple-court", name: "Maple Court Apartments", address: "1420 Maple Ave", market: "Columbus, OH",
-    stage: "Underwriting", targetIrr: 0.15, updatedAt: "2026-09-26",
+    name: "Maple Court Apartments", address: "1420 Maple Ave", market: "Columbus, OH", stage: "Underwriting", targetIrr: 0.15,
     assumptions: baseA(4_250_000, 36),
     lines: lines(
       [540000, 16200, 28000, 42000, 18000, 21000, 19000, 21600, 24000, 9000],
@@ -55,8 +62,7 @@ export const SEED: Deal[] = [
     ],
   },
   {
-    id: "harbor-flats", name: "Harbor Flats", address: "88 Harbor St", market: "Tampa, FL",
-    stage: "LOI", targetIrr: 0.16, updatedAt: "2026-09-21",
+    name: "Harbor Flats", address: "88 Harbor St", market: "Tampa, FL", stage: "LOI", targetIrr: 0.16,
     assumptions: baseA(6_900_000, 48),
     lines: lines(
       [835000, 25000, 40000, 71000, 38000, 26000, 28000, 33400, 42000, 12000],
@@ -66,8 +72,7 @@ export const SEED: Deal[] = [
     adjustments: [{ id: "b1", label: "Insurance quote above T-12", type: "annual", amount: 9000 }],
   },
   {
-    id: "elm-row", name: "Elm Row Townhomes", address: "210 Elm Row", market: "Indianapolis, IN",
-    stage: "Closed", targetIrr: 0.15, updatedAt: "2026-07-10",
+    name: "Elm Row Townhomes", address: "210 Elm Row", market: "Indianapolis, IN", stage: "Closed", targetIrr: 0.15,
     assumptions: baseA(2_150_000, 18),
     lines: lines(
       [276000, 8300, 9000, 24000, 9500, 6000, 11000, 11000, 0, 4500],
@@ -77,8 +82,7 @@ export const SEED: Deal[] = [
     adjustments: [],
   },
   {
-    id: "cedar-point", name: "Cedar Point Commons", address: "5 Cedar Point Rd", market: "Charlotte, NC",
-    stage: "Passed", targetIrr: 0.15, updatedAt: "2026-08-02",
+    name: "Cedar Point Commons", address: "5 Cedar Point Rd", market: "Charlotte, NC", stage: "Passed", targetIrr: 0.15,
     assumptions: baseA(9_400_000, 64),
     lines: lines(
       [1105000, 33000, 52000, 88000, 44000, 38000, 36000, 44200, 60000, 16000],
@@ -89,48 +93,87 @@ export const SEED: Deal[] = [
   },
 ];
 
+type Row = { id: string; firm_id: string; name: string; address: string; market: string; stage: string; assumptions: Json; lines: Json; adjustments: Json; target_irr: number; updated_at: string };
+const fromRow = (r: Row, myFirm: string | undefined): Deal => ({
+  id: r.id, firmId: r.firm_id, name: r.name, address: r.address, market: r.market, stage: r.stage as Stage,
+  assumptions: r.assumptions as unknown as Assumptions, lines: r.lines as unknown as LineItem[],
+  adjustments: r.adjustments as unknown as Adjustment[], targetIrr: Number(r.target_irr),
+  updatedAt: r.updated_at.slice(0, 10), canEdit: r.firm_id === myFirm,
+});
+const toRow = (d: Partial<Deal>) => {
+  const o: { [k: string]: unknown } = {};
+  if (d.name !== undefined) o["name"] = d.name;
+  if (d.address !== undefined) o["address"] = d.address;
+  if (d.market !== undefined) o["market"] = d.market;
+  if (d.stage !== undefined) o["stage"] = d.stage;
+  if (d.assumptions !== undefined) o["assumptions"] = d.assumptions;
+  if (d.lines !== undefined) o["lines"] = d.lines;
+  if (d.adjustments !== undefined) o["adjustments"] = d.adjustments;
+  if (d.targetIrr !== undefined) o["target_irr"] = d.targetIrr;
+  return o;
+};
+
 interface Ctx {
   deals: Deal[];
+  loading: boolean;
   update: (id: string, patch: Partial<Deal>) => void;
-  add: (d: Deal) => void;
+  create: (name: string, market: string) => Promise<string | null>;
 }
-// Keep one context instance across hot reloads so provider and consumers always match.
-const g = globalThis as unknown as { __keystoneDealsCtx?: React.Context<Ctx | null> };
-const DealsCtx = (g.__keystoneDealsCtx ??= createContext<Ctx | null>(null));
-const KEY = "keystone.deals.v1";
+const g = globalThis as unknown as { __keystoneDealsCtx2?: React.Context<Ctx | null> };
+const DealsCtx = (g.__keystoneDealsCtx2 ??= createContext<Ctx | null>(null));
 
 export function DealsProvider({ children }: { children: ReactNode }) {
-  const [deals, setDeals] = useState<Deal[]>(SEED);
-  const [loaded, setLoaded] = useState(false);
+  const { firm, user, justCreated } = useWorkspace();
+  const [deals, setDeals] = useState<Deal[]>([]);
+  const [loading, setLoading] = useState(true);
+  const pending = useRef<Record<string, { patch: Record<string, unknown>; t: ReturnType<typeof setTimeout> }>>({});
+
   useEffect(() => {
-    try {
-      const raw = localStorage.getItem(KEY);
-      if (raw) setDeals(JSON.parse(raw));
-    } catch { /* ignore */ }
-    setLoaded(true);
-  }, []);
-  useEffect(() => {
-    if (loaded) localStorage.setItem(KEY, JSON.stringify(deals));
-  }, [deals, loaded]);
-  const update = (id: string, patch: Partial<Deal>) =>
+    if (!firm) return;
+    (async () => {
+      let { data } = await supabase.from("deals").select("*").order("updated_at", { ascending: false });
+      const own = (data ?? []).filter((r) => r.firm_id === firm.id);
+      if (justCreated && own.length === 0) {
+        await supabase.from("deals").insert(SEED.map((s) => ({ ...toRow(s), firm_id: firm.id, created_by: user.id } as never)));
+        ({ data } = await supabase.from("deals").select("*").order("updated_at", { ascending: false }));
+      }
+      setDeals((data ?? []).map((r) => fromRow(r as Row, firm.id)));
+      setLoading(false);
+    })();
+  }, [firm?.id]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const update = (id: string, patch: Partial<Deal>) => {
     setDeals((ds) => ds.map((d) => (d.id === id ? { ...d, ...patch, updatedAt: new Date().toISOString().slice(0, 10) } : d)));
-  const add = (d: Deal) => setDeals((ds) => [d, ...ds]);
-  return <DealsCtx.Provider value={{ deals, update, add }}>{children}</DealsCtx.Provider>;
+    const p = pending.current[id];
+    if (p) clearTimeout(p.t);
+    const merged = { ...(p?.patch ?? {}), ...toRow(patch), updated_at: new Date().toISOString() };
+    pending.current[id] = {
+      patch: merged,
+      t: setTimeout(async () => {
+        delete pending.current[id];
+        const { error } = await supabase.from("deals").update(merged as never).eq("id", id);
+        if (error) toast.error("Couldn't save: " + error.message);
+      }, 600),
+    };
+  };
+
+  const create = async (name: string, market: string) => {
+    if (!firm) return null;
+    const row = {
+      firm_id: firm.id, created_by: user.id, name, market, stage: "Screening", target_irr: 0.15,
+      assumptions: baseA(3_000_000, 24), lines: lines(Array(10).fill(0), Array(10).fill(0), Array(10).fill(0)), adjustments: [],
+    };
+    const { data, error } = await supabase.from("deals").insert(row as never).select().single();
+    if (error || !data) { toast.error(error?.message ?? "Couldn't create deal"); return null; }
+    setDeals((ds) => [fromRow(data as Row, firm.id), ...ds]);
+    return data.id;
+  };
+
+  return <DealsCtx.Provider value={{ deals, loading, update, create }}>{children}</DealsCtx.Provider>;
 }
 
 export function useDeals() {
   const c = useContext(DealsCtx);
   if (!c) throw new Error("useDeals outside provider");
   return c;
-}
-
-export function blankDeal(name: string, market: string): Deal {
-  const id = name.toLowerCase().replace(/[^a-z0-9]+/g, "-") + "-" + Math.random().toString(36).slice(2, 6);
-  return {
-    id, name, address: "", market, stage: "Screening", targetIrr: 0.15,
-    updatedAt: new Date().toISOString().slice(0, 10),
-    assumptions: baseA(3_000_000, 24),
-    lines: lines(Array(10).fill(0), Array(10).fill(0), Array(10).fill(0)),
-    adjustments: [],
-  };
 }

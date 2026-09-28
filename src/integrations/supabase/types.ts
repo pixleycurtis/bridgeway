@@ -123,45 +123,60 @@ export type Database = {
         Row: {
           address: string
           adjustments: Json
+          asking_price: number | null
           assumptions: Json
           created_at: string
           created_by: string | null
+          final_price: number | null
           firm_id: string
           id: string
           lines: Json
           market: string
           name: string
+          pass_reason: string | null
+          property_type: string
           stage: string
+          stage_history: Json
           target_irr: number
           updated_at: string
         }
         Insert: {
           address?: string
           adjustments?: Json
+          asking_price?: number | null
           assumptions: Json
           created_at?: string
           created_by?: string | null
+          final_price?: number | null
           firm_id: string
           id?: string
           lines: Json
           market?: string
           name: string
+          pass_reason?: string | null
+          property_type?: string
           stage?: string
+          stage_history?: Json
           target_irr?: number
           updated_at?: string
         }
         Update: {
           address?: string
           adjustments?: Json
+          asking_price?: number | null
           assumptions?: Json
           created_at?: string
           created_by?: string | null
+          final_price?: number | null
           firm_id?: string
           id?: string
           lines?: Json
           market?: string
           name?: string
+          pass_reason?: string | null
+          property_type?: string
           stage?: string
+          stage_history?: Json
           target_irr?: number
           updated_at?: string
         }
@@ -226,6 +241,7 @@ export type Database = {
           id: string
           logo_path: string | null
           name: string
+          settings: Json
           style_profile: string | null
         }
         Insert: {
@@ -240,6 +256,7 @@ export type Database = {
           id?: string
           logo_path?: string | null
           name: string
+          settings?: Json
           style_profile?: string | null
         }
         Update: {
@@ -254,6 +271,7 @@ export type Database = {
           id?: string
           logo_path?: string | null
           name?: string
+          settings?: Json
           style_profile?: string | null
         }
         Relationships: []

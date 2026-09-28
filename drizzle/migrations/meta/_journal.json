@@ -29,6 +29,13 @@
       "when": 1790628421705,
       "tag": "0003_fix_deals_select_policy",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1790629443361,
+      "tag": "0004_deal_types_stages_firm_settings",
+      "breakpoints": true
     }
   ]
 }

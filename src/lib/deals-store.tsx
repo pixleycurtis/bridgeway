@@ -5,9 +5,11 @@ import { supabase } from "@/integrations/supabase/client";
 import type { Json } from "@/integrations/supabase/types";
 import type { Adjustment, Assumptions, LineItem } from "./finance";
 import { useWorkspace } from "./workspace";
+import { DEFAULT_STAGES, TERMINAL } from "./firm-settings";
 
-export const STAGES = ["Screening", "Underwriting", "LOI", "Under contract", "Closed", "Passed"] as const;
-export type Stage = (typeof STAGES)[number];
+export const STAGES = [...DEFAULT_STAGES, ...TERMINAL];
+export type Stage = string;
+export interface StageEvent { stage: string; at: string }
 
 export interface Deal {
   id: string;
@@ -16,6 +18,12 @@ export interface Deal {
   address: string;
   market: string;
   stage: Stage;
+  propertyType: string;
+  stageHistory: StageEvent[];
+  passReason: string | null;
+  askingPrice: number | null;
+  finalPrice: number | null;
+  createdAt: string;
   assumptions: Assumptions;
   lines: LineItem[];
   adjustments: Adjustment[];
@@ -46,7 +54,7 @@ const baseA = (price: number, units: number): Assumptions => ({
   rentGrowth: 0.03, expenseGrowth: 0.03, exitCap: 0.065, holdYears: 5, sellPct: 0.02,
 });
 
-type Seed = Omit<Deal, "id" | "firmId" | "canEdit" | "updatedAt">;
+type Seed = Omit<Deal, "id" | "firmId" | "canEdit" | "updatedAt" | "stageHistory" | "passReason" | "askingPrice" | "finalPrice" | "createdAt" | "propertyType"> & { passReason?: string; finalPrice?: number };
 const SEED: Seed[] = [
   {
     name: "Maple Court Apartments", address: "1420 Maple Ave", market: "Columbus, OH", stage: "Underwriting", targetIrr: 0.15,
@@ -72,7 +80,7 @@ const SEED: Seed[] = [
     adjustments: [{ id: "b1", label: "Insurance quote above T-12", type: "annual", amount: 9000 }],
   },
   {
-    name: "Elm Row Townhomes", address: "210 Elm Row", market: "Indianapolis, IN", stage: "Closed", targetIrr: 0.15,
+    name: "Elm Row Townhomes", address: "210 Elm Row", market: "Indianapolis, IN", stage: "Closed", targetIrr: 0.15, finalPrice: 2_060_000,
     assumptions: baseA(2_150_000, 18),
     lines: lines(
       [276000, 8300, 9000, 24000, 9500, 6000, 11000, 11000, 0, 4500],
@@ -82,7 +90,7 @@ const SEED: Seed[] = [
     adjustments: [],
   },
   {
-    name: "Cedar Point Commons", address: "5 Cedar Point Rd", market: "Charlotte, NC", stage: "Passed", targetIrr: 0.15,
+    name: "Cedar Point Commons", address: "5 Cedar Point Rd", market: "Charlotte, NC", stage: "Passed", targetIrr: 0.15, passReason: "Seller wouldn't retrade",
     assumptions: baseA(9_400_000, 64),
     lines: lines(
       [1105000, 33000, 52000, 88000, 44000, 38000, 36000, 44200, 60000, 16000],
@@ -93,11 +101,13 @@ const SEED: Seed[] = [
   },
 ];
 
-type Row = { id: string; firm_id: string; name: string; address: string; market: string; stage: string; assumptions: Json; lines: Json; adjustments: Json; target_irr: number; updated_at: string };
+type Row = { property_type: string; stage_history: Json; pass_reason: string | null; asking_price: number | null; final_price: number | null; created_at: string; id: string; firm_id: string; name: string; address: string; market: string; stage: string; assumptions: Json; lines: Json; adjustments: Json; target_irr: number; updated_at: string };
 const fromRow = (r: Row, myFirm: string | undefined): Deal => ({
   id: r.id, firmId: r.firm_id, name: r.name, address: r.address, market: r.market, stage: r.stage as Stage,
   assumptions: r.assumptions as unknown as Assumptions, lines: r.lines as unknown as LineItem[],
   adjustments: r.adjustments as unknown as Adjustment[], targetIrr: Number(r.target_irr),
+  propertyType: r.property_type, stageHistory: (r.stage_history as unknown as StageEvent[]) ?? [], passReason: r.pass_reason,
+  askingPrice: r.asking_price == null ? null : Number(r.asking_price), finalPrice: r.final_price == null ? null : Number(r.final_price), createdAt: r.created_at,
   updatedAt: r.updated_at.slice(0, 10), canEdit: r.firm_id === myFirm,
 });
 const toRow = (d: Partial<Deal>) => {
@@ -110,6 +120,11 @@ const toRow = (d: Partial<Deal>) => {
   if (d.lines !== undefined) o["lines"] = d.lines;
   if (d.adjustments !== undefined) o["adjustments"] = d.adjustments;
   if (d.targetIrr !== undefined) o["target_irr"] = d.targetIrr;
+  if (d.propertyType !== undefined) o["property_type"] = d.propertyType;
+  if (d.stageHistory !== undefined) o["stage_history"] = d.stageHistory;
+  if (d.passReason !== undefined) o["pass_reason"] = d.passReason;
+  if (d.askingPrice !== undefined) o["asking_price"] = d.askingPrice;
+  if (d.finalPrice !== undefined) o["final_price"] = d.finalPrice;
   return o;
 };
 
@@ -117,13 +132,13 @@ interface Ctx {
   deals: Deal[];
   loading: boolean;
   update: (id: string, patch: Partial<Deal>) => void;
-  create: (name: string, market: string) => Promise<string | null>;
+  create: (name: string, market: string, propertyType?: string) => Promise<string | null>;
 }
 const g = globalThis as unknown as { __keystoneDealsCtx2?: React.Context<Ctx | null> };
 const DealsCtx = (g.__keystoneDealsCtx2 ??= createContext<Ctx | null>(null));
 
 export function DealsProvider({ children }: { children: ReactNode }) {
-  const { firm, user, justCreated } = useWorkspace();
+  const { firm, user, justCreated, settings } = useWorkspace();
   const [deals, setDeals] = useState<Deal[]>([]);
   const [loading, setLoading] = useState(true);
   const pending = useRef<Record<string, { patch: Record<string, unknown>; t: ReturnType<typeof setTimeout> }>>({});
@@ -134,7 +149,7 @@ export function DealsProvider({ children }: { children: ReactNode }) {
       let { data } = await supabase.from("deals").select("*").order("updated_at", { ascending: false });
       const own = (data ?? []).filter((r) => r.firm_id === firm.id);
       if (justCreated && own.length === 0) {
-        await supabase.from("deals").insert(SEED.map((s) => ({ ...toRow(s), firm_id: firm.id, created_by: user.id } as never)));
+        await supabase.from("deals").insert(SEED.map((s) => ({ ...toRow(s), asking_price: s.assumptions.price, stage_history: [{ stage: s.stage, at: new Date(Date.now() - 20 * 86400000).toISOString() }], firm_id: firm.id, created_by: user.id } as never)));
         ({ data } = await supabase.from("deals").select("*").order("updated_at", { ascending: false }));
       }
       setDeals((data ?? []).map((r) => fromRow(r as Row, firm.id)));
@@ -142,7 +157,12 @@ export function DealsProvider({ children }: { children: ReactNode }) {
     })();
   }, [firm?.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const update = (id: string, patch: Partial<Deal>) => {
+  const update = (id: string, input: Partial<Deal>) => {
+    let patch = input;
+    const cur = deals.find((d) => d.id === id);
+    if (cur && input.stage && input.stage !== cur.stage) {
+      patch = { ...input, stageHistory: [...cur.stageHistory, { stage: input.stage, at: new Date().toISOString() }] };
+    }
     setDeals((ds) => ds.map((d) => (d.id === id ? { ...d, ...patch, updatedAt: new Date().toISOString().slice(0, 10) } : d)));
     const p = pending.current[id];
     if (p) clearTimeout(p.t);
@@ -157,11 +177,15 @@ export function DealsProvider({ children }: { children: ReactNode }) {
     };
   };
 
-  const create = async (name: string, market: string) => {
+  const create = async (name: string, market: string, propertyType?: string) => {
     if (!firm) return null;
+    const first = settings.stages[0] ?? "Screening";
+    const d = settings.defaults;
     const row = {
-      firm_id: firm.id, created_by: user.id, name, market, stage: "Screening", target_irr: 0.15,
-      assumptions: baseA(3_000_000, 24), lines: lines(Array(10).fill(0), Array(10).fill(0), Array(10).fill(0)), adjustments: [],
+      firm_id: firm.id, created_by: user.id, name, market, stage: first, target_irr: settings.targetIrr,
+      property_type: propertyType || settings.propertyTypes[0] || "Multifamily", asking_price: 3_000_000,
+      stage_history: [{ stage: first, at: new Date().toISOString() }],
+      assumptions: { ...baseA(3_000_000, 24), ltv: d.ltv, rate: d.rate, exitCap: d.exitCap, holdYears: d.holdYears }, lines: lines(Array(10).fill(0), Array(10).fill(0), Array(10).fill(0)), adjustments: [],
     };
     const { data, error } = await supabase.from("deals").insert(row as never).select().single();
     if (error || !data) { toast.error(error?.message ?? "Couldn't create deal"); return null; }

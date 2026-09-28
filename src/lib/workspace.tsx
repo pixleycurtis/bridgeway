@@ -3,6 +3,7 @@ import { createContext, useCallback, useContext, useEffect, useState, type React
 import type { User } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 import type { Database } from "@/integrations/supabase/types";
+import { readSettings, type FirmSettings } from "./firm-settings";
 
 export type Firm = Database["public"]["Tables"]["firms"]["Row"];
 export type Member = Database["public"]["Tables"]["firm_members"]["Row"];
@@ -22,6 +23,7 @@ interface Ctx {
   me: Member | null;
   logoUrl: string | null;
   isAdmin: boolean;
+  settings: FirmSettings;
   justCreated: boolean;
   refreshFirm: () => Promise<void>;
   signOut: () => Promise<void>;
@@ -69,7 +71,7 @@ export function WorkspaceProvider({ user, children }: { user: User; children: Re
 
   const brand = firm?.brand_color || undefined;
   return (
-    <WsCtx.Provider value={{ user, firm, me, logoUrl, isAdmin: me?.role === "admin", justCreated, refreshFirm, signOut }}>
+    <WsCtx.Provider value={{ user, firm, me, logoUrl, isAdmin: me?.role === "admin", settings: readSettings(firm?.settings), justCreated, refreshFirm, signOut }}>
       <div style={brand ? ({ "--primary": brand, "--ring": brand, "--chart-1": brand } as React.CSSProperties) : undefined}>
         {children}
       </div>

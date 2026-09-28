@@ -5,10 +5,12 @@ import { Stat } from "@/components/app-shell";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { STAGES, useDeals, type Deal, type Stage } from "@/lib/deals-store";
+import { useDeals, type Deal } from "@/lib/deals-store";
 import { analyze, pct, solvePrice, sumBy, usd, type Assumptions, type LineItem } from "@/lib/finance";
 import { DocumentsStudio } from "@/components/documents-studio";
 import { ShareDialog, UploadPanel } from "@/components/deal-extras";
+import { useWorkspace } from "@/lib/workspace";
+import { PASS_REASONS, allStages } from "@/lib/firm-settings";
 
 export const Route = createFileRoute("/_authenticated/deals/$dealId")({
   head: () => ({
@@ -36,6 +38,7 @@ function DealPage() {
   const deal = deals.find((d) => d.id === dealId);
   const [step, setStep] = useState<StepId | null>(null);
   const { loading } = useDeals();
+  const { settings } = useWorkspace();
   if (!deal) return loading ? <div className="p-10 text-sm text-muted-foreground">Loading…</div> : <div className="p-10">Deal not found. <Link to="/" className="underline">Back to pipeline</Link></div>;
   const r = analyze(deal.lines, deal.assumptions, deal.adjustments);
   const set = (p: Partial<Deal>) => { if (deal.canEdit) update(deal.id, p); };
@@ -53,10 +56,22 @@ function DealPage() {
           {deal.canEdit ? (
             <div className="flex gap-2">
               <ShareDialog deal={deal} />
-              <select value={deal.stage} onChange={(e) => set({ stage: e.target.value as Stage })}
-                className="rounded-md border bg-card px-3 py-2 text-sm">
-                {STAGES.map((s) => <option key={s}>{s}</option>)}
+              <select value={deal.propertyType} onChange={(e) => set({ propertyType: e.target.value })} className="rounded-md border bg-card px-3 py-2 text-sm" aria-label="Property type">
+                {[...new Set([...settings.propertyTypes, deal.propertyType])].map((t) => <option key={t}>{t}</option>)}
               </select>
+              <select value={deal.stage} onChange={(e) => set({ stage: e.target.value })} className="rounded-md border bg-card px-3 py-2 text-sm" aria-label="Stage">
+                {[...new Set([...allStages(settings), deal.stage])].map((s) => <option key={s}>{s}</option>)}
+              </select>
+              {deal.stage === "Passed" && (
+                <select value={deal.passReason ?? ""} onChange={(e) => set({ passReason: e.target.value || null })} className="rounded-md border bg-card px-3 py-2 text-sm" aria-label="Why passed">
+                  <option value="">Why did you pass?</option>
+                  {PASS_REASONS.map((r) => <option key={r}>{r}</option>)}
+                </select>
+              )}
+              {deal.stage === "Closed" && (
+                <label className="flex items-center gap-1 rounded-md border bg-card px-3 py-1 text-sm"><span className="text-muted-foreground">Final price</span>
+                  <input type="number" value={deal.finalPrice ?? ""} placeholder={String(deal.assumptions.price)} onChange={(e) => set({ finalPrice: e.target.value ? Number(e.target.value) : null })} className="num w-28 bg-transparent text-right outline-none" /></label>
+              )}
             </div>
           ) : <span className="rounded bg-secondary px-3 py-1.5 text-xs text-secondary-foreground">Shared with you · view only</span>}
         </div>
@@ -100,15 +115,16 @@ function Reconcile({ deal, set, onNext }: { deal: Deal; set: (p: Partial<Deal>) 
   const edit = (key: string, col: keyof LineItem, v: number) =>
     set({ lines: deal.lines.map((l) => (l.key === key ? { ...l, [col]: v } : l)) });
   const tot = { b: sumBy(deal.lines, "broker"), t: sumBy(deal.lines, "t12"), u: sumBy(deal.lines, "underwrite") };
+  const th = useWorkspace().settings.flagThreshold;
   const flags = deal.lines
     .map((l) => ({ l, d: l.t12 - l.broker, p: l.broker ? (l.t12 - l.broker) / l.broker : l.t12 ? 1 : 0 }))
-    .filter((x) => Math.abs(x.p) >= 0.1 && Math.abs(x.d) >= 1000)
+    .filter((x) => Math.abs(x.p) >= th && Math.abs(x.d) >= 1000)
     .sort((a, b) => Math.abs(b.d) - Math.abs(a.d));
   return (
     <div className="grid gap-8 xl:grid-cols-[1fr_320px]">
       <div>
         <h2 className="font-display text-2xl">Broker said vs. the books</h2>
-        <p className="mt-1 max-w-2xl text-sm text-muted-foreground">Enter the OM pro forma and trailing-12 side by side. Anything off by 10%+ gets flagged, and your underwrite column is what drives returns.</p>
+        <p className="mt-1 max-w-2xl text-sm text-muted-foreground">Enter the OM pro forma and trailing-12 side by side. Anything off by {Math.round(th * 100)}%+ gets flagged, and your underwrite column is what drives returns.</p>
         <div className="mt-5 overflow-x-auto rounded-md border bg-card">
           <table className="w-full text-sm">
             <thead className="border-b text-[11px] uppercase tracking-widest text-muted-foreground">
@@ -123,8 +139,8 @@ function Reconcile({ deal, set, onNext }: { deal: Deal; set: (p: Partial<Deal>) 
             <tbody>
               {deal.lines.map((l) => {
                 const g = l.broker ? (l.t12 - l.broker) / l.broker : 0;
-                const bad = l.kind === "expense" ? g > 0.1 : g < -0.1;
-                const warn = Math.abs(g) >= 0.1;
+                const bad = l.kind === "expense" ? g > th : g < -th;
+                const warn = Math.abs(g) >= th;
                 return (
                   <tr key={l.key} className="border-b last:border-0">
                     <td className="px-4 py-1.5">{l.label}<span className="ml-2 text-xs text-muted-foreground">{l.kind === "income" ? "income" : ""}</span></td>
@@ -160,7 +176,7 @@ function Reconcile({ deal, set, onNext }: { deal: Deal; set: (p: Partial<Deal>) 
           <div className="text-[11px] uppercase tracking-widest text-muted-foreground">Flagged discrepancies</div>
           <div className="num mt-1 text-3xl">{flags.length}</div>
           <ul className="mt-4 space-y-3 text-sm">
-            {flags.length === 0 && <li className="text-muted-foreground">Nothing off by more than 10%.</li>}
+            {flags.length === 0 && <li className="text-muted-foreground">Nothing off by more than {Math.round(th * 100)}%.</li>}
             {flags.map(({ l, d, p }) => (
               <li key={l.key} className="border-t pt-3">
                 <div className="flex justify-between"><span>{l.label}</span><span className="num text-destructive">{d > 0 ? "+" : ""}{usd(d, true)}</span></div>

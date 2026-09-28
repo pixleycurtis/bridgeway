@@ -4,10 +4,11 @@ import type { Firm } from "./workspace";
 
 export type TableKey = "summary" | "income" | "returns" | "cashflow" | "sensitivity" | "debt" | "findings";
 export interface Section { id: string; title: string; body: string; table?: TableKey | null }
-export type DocKind = "memo" | "loi" | "lender" | "retrade" | "ddlist";
+export type DocKind = "memo" | "loi" | "lender" | "retrade" | "ddlist" | "ic";
 
 export const DOC_KINDS: { kind: DocKind; title: string; audience: string; blurb: string }[] = [
   { kind: "memo", title: "Investment summary", audience: "Partners & investors", blurb: "The deal on a page: thesis, numbers, returns, risks." },
+  { kind: "ic", title: "Committee memo", audience: "Investment committee", blurb: "One-page sign-off summary: returns, risks, diligence, and the ask." },
   { kind: "loi", title: "Letter of intent", audience: "Seller", blurb: "Price, deposit, diligence period, and closing terms." },
   { kind: "lender", title: "Lender package", audience: "Lender", blurb: "Loan request, operating history, debt coverage, cash flows." },
   { kind: "ddlist", title: "Due diligence request list", audience: "Seller", blurb: "Everything you need from the seller during diligence." },

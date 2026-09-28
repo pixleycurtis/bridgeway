@@ -28,12 +28,12 @@ export const Route = createFileRoute("/_authenticated/deals/$dealId")({
 });
 
 const STEPS = [
-  { id: "reconcile", n: "01", label: "Reconcile", hint: "Broker OM vs. T-12" },
-  { id: "underwrite", n: "02", label: "Underwrite", hint: "Assumptions & returns" },
-  { id: "retrade", n: "03", label: "Diligence & retrade", hint: "Findings to price" },
-  { id: "schedule", n: "04", label: "Schedule", hint: "Key dates & tasks" },
-  { id: "vault", n: "05", label: "Data room", hint: "DD tracker & files" },
-  { id: "financing", n: "06", label: "Financing", hint: "Lender quotes" },
+  { id: "schedule", n: "01", label: "Schedule", hint: "Key dates & tasks" },
+  { id: "vault", n: "02", label: "Data room", hint: "DD tracker & files" },
+  { id: "reconcile", n: "03", label: "Reconcile", hint: "Broker OM vs. T-12" },
+  { id: "underwrite", n: "04", label: "Underwrite", hint: "Assumptions & returns" },
+  { id: "financing", n: "05", label: "Financing", hint: "Lender quotes" },
+  { id: "retrade", n: "06", label: "Diligence & retrade", hint: "Findings to price" },
   { id: "documents", n: "07", label: "Documents", hint: "Branded deliverables" },
 ] as const;
 type StepId = (typeof STEPS)[number]["id"];
@@ -48,7 +48,8 @@ function DealPage() {
   if (!deal) return loading ? <div className="p-10 text-sm text-muted-foreground">Loading…</div> : <div className="p-10">Deal not found. <Link to="/" className="underline">Back to pipeline</Link></div>;
   const r = analyze(deal.lines, deal.assumptions, deal.adjustments);
   const set = (p: Partial<Deal>) => { if (deal.canEdit) update(deal.id, p); };
-  const current: StepId = step ?? (deal.canEdit ? "reconcile" : "documents");
+  const current: StepId = step ?? (deal.canEdit ? "schedule" : "documents");
+  const nextStep = STEPS[STEPS.findIndex((s) => s.id === current) + 1];
 
   return (
     <div>
@@ -90,12 +91,12 @@ function DealPage() {
         </div>
         <nav className="mt-6 flex gap-1 overflow-x-auto">
           {STEPS.map((s) => (
-            <button key={s.id} onClick={() => setStep(s.id)}
-              className={`-mb-px border-b-2 px-4 py-3 text-left transition-colors ${current === s.id ? "border-primary text-foreground" : "border-transparent text-muted-foreground hover:text-foreground"}`}>
+            <Button key={s.id} variant="ghost" onClick={() => setStep(s.id)}
+              className={`h-auto shrink-0 rounded-none -mb-px border-b-2 px-4 py-3 text-left transition-colors ${current === s.id ? "border-primary text-foreground" : "border-transparent text-muted-foreground hover:text-foreground"}`}>
               <span className="num mr-2 text-xs">{s.n}</span>
               <span className="text-sm font-medium">{s.label}</span>
               <span className="ml-2 hidden text-xs text-muted-foreground lg:inline">{s.hint}</span>
-            </button>
+            </Button>
           ))}
         </nav>
       </div>
@@ -103,9 +104,12 @@ function DealPage() {
         {current === "documents" ? <DocumentsStudio deal={deal} /> : current === "schedule" ? <DealSchedule deal={deal} /> : current === "vault" ? <DealVault deal={deal} /> : current === "financing" ? <LenderQuotes deal={deal} /> : (
           <fieldset disabled={!deal.canEdit} className="min-w-0">
             {current === "reconcile" && <Reconcile deal={deal} set={set} onNext={() => setStep("underwrite")} />}
-            {current === "underwrite" && <Underwrite deal={deal} set={set} onNext={() => setStep("retrade")} />}
-            {current === "retrade" && <Retrade deal={deal} set={set} onNext={() => setStep("schedule")} />}
+            {current === "underwrite" && <Underwrite deal={deal} set={set} onNext={() => setStep("financing")} />}
+            {current === "retrade" && <Retrade deal={deal} set={set} onNext={() => setStep("documents")} />}
           </fieldset>
+        )}
+        {nextStep && (current === "schedule" || current === "vault" || current === "financing") && (
+          <div className="mt-6 flex justify-end"><Button onClick={() => setStep(nextStep.id)}>Continue to {nextStep.label.toLowerCase()} →</Button></div>
         )}
       </div>
     </div>
@@ -276,7 +280,7 @@ function Underwrite({ deal, set, onNext }: { deal: Deal; set: (p: Partial<Deal>)
             </table>
           </div>
         </div>
-        <div className="flex justify-end"><Button onClick={onNext}>Continue to diligence →</Button></div>
+        <div className="flex justify-end"><Button onClick={onNext}>Continue to financing →</Button></div>
       </div>
     </div>
   );

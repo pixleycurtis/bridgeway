@@ -78,6 +78,13 @@ export function defaultSections(kind: DocKind, d: Deal, firm: Firm | null): Sect
         s("Physical", `• Capital expenditure history for the past three years\n• Any property condition, environmental, or engineering reports\n• Roof, HVAC, and major system warranties\n• Open work orders and unit turn schedule`),
         s("Legal & other", `• Service, vendor, and management contracts\n• Insurance loss runs for the past five years\n• Certificate of occupancy and any open code violations\n• Pending or threatened litigation\n• Title policy and survey`),
       ];
+    case "ic":
+      return [
+        s("Recommendation", `${buyer} seeks investment committee approval to acquire ${d.name}, a ${a.units}-unit property at ${where}, for ${usd(a.price)} at a ${pct(r.capRate, 2)} going-in cap rate. Our underwritten Year-1 NOI is ${usd(r.noi)}.`, "summary"),
+        s("Returns", `Assuming ${pct(a.ltv, 0)} LTV financing at ${pct(a.rate, 2)} over ${a.amortYears} years, the deal produces ${pct(r.cashOnCash)} Year-1 cash-on-cash, a ${r.dscr.toFixed(2)}x DSCR and a ${pct(r.irr)} levered IRR (${r.equityMultiple.toFixed(2)}x equity multiple) against our ${pct(d.targetIrr)} target over a ${a.holdYears}-year hold.`, "returns"),
+        s("Diligence & risk", `${d.adjustments.length ? `${d.adjustments.length} diligence finding${d.adjustments.length > 1 ? "s" : ""} valued at ${usd(oneTime + Math.round(annual / (r.capRate || 1)))} in total` : "No diligence findings to date"}. Key risks: expense growth above plan, exit cap expansion beyond ${pct(a.exitCap, 2)}, and capital program overruns on the ${usd(a.capex)} budget.`),
+        s("Financing status", r.quotes ? r.quotes : `Loan request sized at ${usd(r.loan)}; quotes to be compared before hard money.`),
+      ];
     case "retrade":
       return [
         s("Letter", `${today}\n\nRe: ${d.name}${where ? `, ${where}` : ""}\n\nThank you for your cooperation through the due diligence period. Our review has identified the following items that were not reflected in the offering materials.`, "findings"),

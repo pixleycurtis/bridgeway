@@ -8,6 +8,13 @@
       "when": 1790626808833,
       "tag": "0000_firms_deals_documents",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1790626846551,
+      "tag": "0001_storage_policies",
+      "breakpoints": true
     }
   ]
 }

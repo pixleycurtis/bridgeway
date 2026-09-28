@@ -62,7 +62,7 @@ export function PageHeader({ eyebrow, title, children }: { eyebrow?: string; tit
   );
 }
 
-export function Stat({ label, value, tone }: { label: string; value: string; tone?: "pos" | "neg" | "warn" }) {
+export function Stat({ label, value, tone }: { label: string; value: string; tone?: "pos" | "neg" | "warn" | undefined }) {
   const c = tone === "pos" ? "text-positive" : tone === "neg" ? "text-destructive" : tone === "warn" ? "text-warning" : "";
   return (
     <div className="border-l px-4 py-1 first:border-l-0 first:pl-0">

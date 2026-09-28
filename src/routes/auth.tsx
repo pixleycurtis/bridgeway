@@ -13,6 +13,8 @@ export const Route = createFileRoute("/auth")({
       { name: "description", content: "Sign in with your work email to open your firm's Keystone workspace." },
       { property: "og:title", content: "Sign in — Keystone" },
       { property: "og:description", content: "Sign in with your work email to open your firm's Keystone workspace." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
     ],
   }),
   component: AuthPage,

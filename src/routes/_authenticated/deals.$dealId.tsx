@@ -5,10 +5,12 @@ import { Stat } from "@/components/app-shell";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { STAGES, useDeals, type Deal, type Stage } from "@/lib/deals-store";
+import { useDeals, type Deal } from "@/lib/deals-store";
 import { analyze, pct, solvePrice, sumBy, usd, type Assumptions, type LineItem } from "@/lib/finance";
 import { DocumentsStudio } from "@/components/documents-studio";
 import { ShareDialog, UploadPanel } from "@/components/deal-extras";
+import { useWorkspace } from "@/lib/workspace";
+import { PASS_REASONS, allStages } from "@/lib/firm-settings";
 
 export const Route = createFileRoute("/_authenticated/deals/$dealId")({
   head: () => ({
@@ -36,6 +38,7 @@ function DealPage() {
   const deal = deals.find((d) => d.id === dealId);
   const [step, setStep] = useState<StepId | null>(null);
   const { loading } = useDeals();
+  const { settings } = useWorkspace();
   if (!deal) return loading ? <div className="p-10 text-sm text-muted-foreground">Loading…</div> : <div className="p-10">Deal not found. <Link to="/" className="underline">Back to pipeline</Link></div>;
   const r = analyze(deal.lines, deal.assumptions, deal.adjustments);
   const set = (p: Partial<Deal>) => { if (deal.canEdit) update(deal.id, p); };
@@ -53,10 +56,22 @@ function DealPage() {
           {deal.canEdit ? (
             <div className="flex gap-2">
               <ShareDialog deal={deal} />
-              <select value={deal.stage} onChange={(e) => set({ stage: e.target.value as Stage })}
-                className="rounded-md border bg-card px-3 py-2 text-sm">
-                {STAGES.map((s) => <option key={s}>{s}</option>)}
+              <select value={deal.propertyType} onChange={(e) => set({ propertyType: e.target.value })} className="rounded-md border bg-card px-3 py-2 text-sm" aria-label="Property type">
+                {[...new Set([...settings.propertyTypes, deal.propertyType])].map((t) => <option key={t}>{t}</option>)}
               </select>
+              <select value={deal.stage} onChange={(e) => set({ stage: e.target.value })} className="rounded-md border bg-card px-3 py-2 text-sm" aria-label="Stage">
+                {[...new Set([...allStages(settings), deal.stage])].map((s) => <option key={s}>{s}</option>)}
+              </select>
+              {deal.stage === "Passed" && (
+                <select value={deal.passReason ?? ""} onChange={(e) => set({ passReason: e.target.value || null })} className="rounded-md border bg-card px-3 py-2 text-sm" aria-label="Why passed">
+                  <option value="">Why did you pass?</option>
+                  {PASS_REASONS.map((r) => <option key={r}>{r}</option>)}
+                </select>
+              )}
+              {deal.stage === "Closed" && (
+                <label className="flex items-center gap-1 rounded-md border bg-card px-3 py-1 text-sm"><span className="text-muted-foreground">Final price</span>
+                  <input type="number" value={deal.finalPrice ?? ""} placeholder={String(deal.assumptions.price)} onChange={(e) => set({ finalPrice: e.target.value ? Number(e.target.value) : null })} className="num w-28 bg-transparent text-right outline-none" /></label>
+              )}
             </div>
           ) : <span className="rounded bg-secondary px-3 py-1.5 text-xs text-secondary-foreground">Shared with you · view only</span>}
         </div>
@@ -100,7 +115,7 @@ function Reconcile({ deal, set, onNext }: { deal: Deal; set: (p: Partial<Deal>) 
   const edit = (key: string, col: keyof LineItem, v: number) =>
     set({ lines: deal.lines.map((l) => (l.key === key ? { ...l, [col]: v } : l)) });
   const tot = { b: sumBy(deal.lines, "broker"), t: sumBy(deal.lines, "t12"), u: sumBy(deal.lines, "underwrite") };
-  const th = settings.flagThreshold;
+  const th = useWorkspace().settings.flagThreshold;
   const flags = deal.lines
     .map((l) => ({ l, d: l.t12 - l.broker, p: l.broker ? (l.t12 - l.broker) / l.broker : l.t12 ? 1 : 0 }))
     .filter((x) => Math.abs(x.p) >= th && Math.abs(x.d) >= 1000)

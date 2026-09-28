@@ -53,7 +53,8 @@ export function DocumentsStudio({ deal }: { deal: Deal }) {
   const exportPdf = () => {
     const prev = document.title;
     document.title = `${deal.name} — ${meta.title}`;
-    setTimeout(() => { window.print(); document.title = prev; }, 50);
+    setEditing(false);
+    setTimeout(() => { window.print(); document.title = prev; }, 200);
   };
 
   const font = DOC_FONTS[firm?.doc_font ?? "serif"]?.css ?? DOC_FONTS.serif!.css;

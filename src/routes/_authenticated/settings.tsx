@@ -10,6 +10,7 @@ import { ROLE_LABELS, useWorkspace, type FirmRole, type Member } from "@/lib/wor
 import { DOC_FONTS } from "@/lib/documents";
 import { ACCEPT, readForAI } from "@/lib/files";
 import { learnStyle } from "@/lib/ai.functions";
+import { PipelineSettings } from "@/components/pipeline-settings";
 
 export const Route = createFileRoute("/_authenticated/settings")({
   head: () => ({
@@ -28,7 +29,7 @@ function Settings() {
     <div>
       <PageHeader eyebrow="Firm" title="Settings" />
       <div className="grid gap-10 px-6 py-8 md:px-10 xl:grid-cols-2">
-        <Branding />
+        <div className="space-y-10"><Branding /><PipelineSettings /></div>
         <div className="space-y-10"><Team /><WritingStyle /></div>
       </div>
     </div>

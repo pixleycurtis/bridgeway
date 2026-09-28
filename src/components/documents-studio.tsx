@@ -57,7 +57,7 @@ export function DocumentsStudio({ deal }: { deal: Deal }) {
     setTimeout(() => { window.print(); document.title = prev; }, 200);
   };
 
-  const font = DOC_FONTS[firm?.doc_font ?? "serif"]?.css ?? DOC_FONTS.serif!.css;
+  const font = DOC_FONTS[firm?.doc_font ?? "serif"]?.css ?? DOC_FONTS["serif"]!.css;
   const brand = firm?.brand_color ?? "#1f4d3a";
 
   return (

@@ -106,9 +106,9 @@ export function ShareDialog({ deal }: { deal: Deal }) {
   const add = async (e: React.FormEvent) => {
     e.preventDefault();
     const clean = email.trim().toLowerCase();
-    if (!/^\S+@\S+\.\S+$/.test(clean)) return toast.error("Enter a valid email");
+    if (!/^\S+@\S+\.\S+$/.test(clean)) { toast.error("Enter a valid email"); return; }
     const { error } = await supabase.from("deal_shares").insert({ deal_id: deal.id, email: clean, party, created_by: user.id });
-    if (error) return toast.error(error.message);
+    if (error) { toast.error(error.message); return; }
     setEmail(""); load();
     toast.success(`Shared with ${clean}. They'll see it after signing in with that email.`);
   };

@@ -101,15 +101,15 @@ const fromRow = (r: Row, myFirm: string | undefined): Deal => ({
   updatedAt: r.updated_at.slice(0, 10), canEdit: r.firm_id === myFirm,
 });
 const toRow = (d: Partial<Deal>) => {
-  const o: Record<string, unknown> = {};
-  if (d.name !== undefined) o.name = d.name;
-  if (d.address !== undefined) o.address = d.address;
-  if (d.market !== undefined) o.market = d.market;
-  if (d.stage !== undefined) o.stage = d.stage;
-  if (d.assumptions !== undefined) o.assumptions = d.assumptions;
-  if (d.lines !== undefined) o.lines = d.lines;
-  if (d.adjustments !== undefined) o.adjustments = d.adjustments;
-  if (d.targetIrr !== undefined) o.target_irr = d.targetIrr;
+  const o: { [k: string]: unknown } = {};
+  if (d.name !== undefined) o["name"] = d.name;
+  if (d.address !== undefined) o["address"] = d.address;
+  if (d.market !== undefined) o["market"] = d.market;
+  if (d.stage !== undefined) o["stage"] = d.stage;
+  if (d.assumptions !== undefined) o["assumptions"] = d.assumptions;
+  if (d.lines !== undefined) o["lines"] = d.lines;
+  if (d.adjustments !== undefined) o["adjustments"] = d.adjustments;
+  if (d.targetIrr !== undefined) o["target_irr"] = d.targetIrr;
   return o;
 };
 

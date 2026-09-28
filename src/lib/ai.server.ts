@@ -30,7 +30,7 @@ export async function runAI(messages: ModelMessage[], system?: string): Promise<
   let failure: unknown;
   const result = streamText({
     model: provider.responses(MODEL),
-    system,
+    ...(system ? { system } : {}),
     messages,
     onError: ({ error }) => { failure = error; },
     providerOptions: {

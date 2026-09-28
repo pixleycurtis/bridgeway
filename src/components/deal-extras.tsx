@@ -25,7 +25,9 @@ export function UploadPanel({ deal, set }: { deal: Deal; set: (p: Partial<Deal>)
     try {
       const path = `${deal.firmId}/${deal.id}/${Date.now()}-${file.name.replace(/[^\w.-]+/g, "_")}`;
       const up = await supabase.storage.from("deal-files").upload(path, file);
-      if (!up.error) await supabase.from("deal_files").insert({ deal_id: deal.id, kind, name: file.name, path });
+      if (up.error) throw up.error;
+      const { error: metadataError } = await supabase.from("deal_files").insert({ deal_id: deal.id, kind, name: file.name, path });
+      if (metadataError) { await supabase.storage.from("deal-files").remove([path]); throw metadataError; }
       const data = await extract({ data: { ...(await readForAI(file)), kind } });
       setResult({ kind, name: file.name, data });
     } catch (e) {
@@ -50,7 +52,6 @@ export function UploadPanel({ deal, set }: { deal: Deal; set: (p: Partial<Deal>)
   return (
     <div className="rounded-md border bg-card p-5">
       <div className="text-[11px] uppercase tracking-widest text-muted-foreground">Fill from documents</div>
-      <p className="mt-1 text-xs text-muted-foreground">Drop in the broker's OM and the T-12 (PDF, Excel, or CSV). AI reads them and fills the columns — you review before anything changes.</p>
       <div className="mt-3 grid gap-2">
         {(["om", "t12"] as const).map((k) => (
           <label key={k} className={`flex cursor-pointer items-center justify-between rounded border border-dashed px-3 py-2.5 text-sm hover:border-primary ${busy === k ? "opacity-60" : ""}`}>
@@ -130,7 +131,7 @@ export function ShareDialog({ deal }: { deal: Deal }) {
           {shares.map((s) => (
             <li key={s.id} className="flex items-center justify-between p-3">
               <span>{s.email} <span className="ml-1 text-xs capitalize text-muted-foreground">{s.party} · view only</span></span>
-              <button className="text-xs text-muted-foreground hover:text-destructive" onClick={async () => { await supabase.from("deal_shares").delete().eq("id", s.id); load(); }}>Remove</button>
+              <Button variant="ghost" size="sm" className="text-xs text-muted-foreground hover:text-destructive" onClick={async () => { await supabase.from("deal_shares").delete().eq("id", s.id); load(); }}>Remove</Button>
             </li>
           ))}
         </ul>

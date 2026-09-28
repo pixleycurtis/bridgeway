@@ -6,6 +6,8 @@ import { Input } from "@/components/ui/input";
 import { useDealRows, type DdItem } from "@/lib/deal-tables";
 import type { Deal } from "@/lib/deals-store";
 import { useWorkspace } from "@/lib/workspace";
+import { useServerFn } from "@tanstack/react-start";
+import { getSharedFileUrl } from "@/lib/deal-files.functions";
 
 const CATEGORIES = ["Financial", "Physical", "Legal & other"];
 const TEMPLATE: { label: string; category: string }[] = [
@@ -27,22 +29,35 @@ const TEMPLATE: { label: string; category: string }[] = [
 type FileRow = { id: string; kind: string; name: string; path: string; created_at: string };
 
 export function DealVault({ deal }: { deal: Deal }) {
-  const { firm } = useWorkspace();
-  const { rows, add, update, remove } = useDealRows<DdItem>("deal_dd_items", deal.id, "created_at");
+  const { rows, loading, error, reload, add, update, remove } = useDealRows<DdItem>("deal_dd_items", deal.id, "created_at");
+  const getFileUrl = useServerFn(getSharedFileUrl);
   const [files, setFiles] = useState<FileRow[]>([]);
+  const [fileError, setFileError] = useState<string | null>(null);
+  const [filesLoading, setFilesLoading] = useState(true);
   const [label, setLabel] = useState("");
   const [category, setCategory] = useState<string>(CATEGORIES[0] ?? "Financial");
 
   useEffect(() => {
     (async () => {
-      const { data } = await supabase.from("deal_files").select("id, kind, name, path, created_at").eq("deal_id", deal.id).order("created_at", { ascending: false });
-      setFiles((data ?? []) as FileRow[]);
+      setFilesLoading(true);
+      const { data, error: readError } = await supabase.from("deal_files").select("id, kind, name, path, created_at").eq("deal_id", deal.id).order("created_at", { ascending: false });
+      if (readError) setFileError(readError.message);
+      else { setFiles((data ?? []) as FileRow[]); setFileError(null); }
+      setFilesLoading(false);
     })();
   }, [deal.id]);
 
   const openFile = async (path: string) => {
-    const { data } = await supabase.storage.from("deal-files").createSignedUrl(path, 60 * 60);
-    if (data?.signedUrl) window.open(data.signedUrl, "_blank");
+    // Reserve a tab synchronously so browsers do not block it after the signing request.
+    const tab = window.open("", "_blank");
+    try {
+      const { url } = await getFileUrl({ data: { dealId: deal.id, path } });
+      if (tab) tab.location.href = url;
+      else window.location.assign(url);
+    } catch (e) {
+      tab?.close();
+      toast.error(e instanceof Error ? e.message : "Could not open the file");
+    }
   };
 
   const onFile = async (item: DdItem, file?: File) => {
@@ -50,6 +65,8 @@ export function DealVault({ deal }: { deal: Deal }) {
     const path = `${deal.firmId}/${deal.id}/${Date.now()}-${file.name.replace(/[^\w.-]+/g, "_")}`;
     const up = await supabase.storage.from("deal-files").upload(path, file);
     if (up.error) { toast.error(up.error.message); return; }
+    const { error: metadataError } = await supabase.from("deal_files").insert({ deal_id: deal.id, kind: "dd", name: file.name, path });
+    if (metadataError) { await supabase.storage.from("deal-files").remove([path]); toast.error(metadataError.message); return; }
     await update(item.id, { received: true, file_path: path });
     setFiles((fs) => [{ id: crypto.randomUUID(), kind: "dd", name: file.name, path, created_at: new Date().toISOString() }, ...fs]);
     toast.success("Filed");
@@ -79,7 +96,6 @@ export function DealVault({ deal }: { deal: Deal }) {
           <h2 className="font-display text-2xl">Diligence tracker</h2>
           <span className="num text-sm text-muted-foreground">{receivedCount} of {rows.length} received{rows.length ? ` · ${pctDone}%` : ""}</span>
         </div>
-        <p className="mt-1 text-sm text-muted-foreground">The seller's homework list. Check items off as the documents land; everything you upload is stored here for the whole team.</p>
         {deal.canEdit && (
           <div className="mt-4 flex flex-wrap gap-2">
             <form className="flex flex-1 flex-wrap gap-2" onSubmit={async (e) => { e.preventDefault(); if (!label.trim()) return; await add({ label: label.trim(), category, received: false }); setLabel(""); }}>
@@ -107,16 +123,16 @@ export function DealVault({ deal }: { deal: Deal }) {
                         <span className={it.received ? "text-muted-foreground line-through" : ""}>{it.label}</span>
                       </label>
                       <div className="flex shrink-0 items-center gap-2">
-                        {it.filePath && <button className="text-xs underline hover:text-foreground" onClick={() => openFile(it.filePath!)}>Open file</button>}
+                        {it.filePath && <Button variant="link" size="sm" className="h-auto p-0 text-xs" onClick={() => void openFile(it.filePath ?? "")}>Open file</Button>}
                         {deal.canEdit && !it.filePath && files.length > 0 && (
-                          <button className="text-xs text-muted-foreground hover:text-foreground" onClick={() => attachExisting(it)}>Link a file</button>
+                          <Button variant="link" size="sm" className="h-auto p-0 text-xs text-muted-foreground" onClick={() => attachExisting(it)}>Link a file</Button>
                         )}
                         {deal.canEdit && (
                           <label className="cursor-pointer text-xs text-muted-foreground hover:text-foreground">
                             Upload<input type="file" className="hidden" onChange={(e) => { onFile(it, e.target.files?.[0]); e.target.value = ""; }} />
                           </label>
                         )}
-                        {deal.canEdit && <button className="text-xs text-muted-foreground hover:text-destructive" onClick={() => remove(it.id)}>Remove</button>}
+                        {deal.canEdit && <Button variant="ghost" size="sm" className="text-xs text-muted-foreground hover:text-destructive" onClick={() => remove(it.id)}>Remove</Button>}
                       </div>
                     </li>
                   ))}
@@ -124,17 +140,20 @@ export function DealVault({ deal }: { deal: Deal }) {
               </div>
             );
           })}
-          {rows.length === 0 && <p className="rounded-md border bg-card p-6 text-center text-sm text-muted-foreground">Nothing on the list yet — start with the standard request list above.</p>}
+          {loading && <p className="border-t py-6 text-sm text-muted-foreground">Loading requests…</p>}
+          {!loading && !error && rows.length === 0 && <p className="border-t py-6 text-sm text-muted-foreground">{deal.canEdit ? "Start with the standard request list above." : "No requests on this deal."}</p>}
+          {error && <div role="alert" className="text-sm text-destructive">Couldn't load requests. <Button variant="link" size="sm" onClick={() => void reload()}>Retry</Button></div>}
         </div>
       </div>
       <aside>
         <h3 className="font-display text-xl">Files</h3>
-        <p className="mt-1 text-xs text-muted-foreground">Every document on this deal, including the OM and T-12 you uploaded on step 01.</p>
         <ul className="mt-4 divide-y rounded-md border bg-card text-sm">
-          {files.length === 0 && <li className="p-4 text-muted-foreground">No files yet.</li>}
+          {filesLoading && <li className="p-4 text-muted-foreground">Loading files…</li>}
+          {fileError && <li role="alert" className="p-4 text-destructive">Couldn't load files. Reopen this deal to retry.</li>}
+          {!filesLoading && !fileError && files.length === 0 && <li className="p-4 text-muted-foreground">{deal.canEdit ? "Upload a requested document to add it here." : "No files shared on this deal yet."}</li>}
           {files.map((f) => (
             <li key={f.id} className="px-4 py-2.5">
-              <button className="truncate text-left hover:underline" onClick={() => openFile(f.path)}>{f.name}</button>
+              <Button variant="link" size="sm" className="h-auto max-w-full truncate p-0 text-left" onClick={() => void openFile(f.path)}>{f.name}</Button>
               <div className="text-xs capitalize text-muted-foreground">{f.kind === "om" ? "Broker OM" : f.kind === "t12" ? "T-12" : "Document"} · {f.created_at.slice(0, 10)}</div>
             </li>
           ))}

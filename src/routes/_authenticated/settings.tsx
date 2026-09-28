@@ -44,14 +44,14 @@ function Branding() {
   if (!firm) return null;
   const save = async () => {
     const { error } = await supabase.from("firms").update(f).eq("id", firm.id);
-    if (error) return toast.error(error.message);
+    if (error) { toast.error(error.message); return; }
     await refreshFirm(); toast.success("Branding saved");
   };
   const uploadLogo = async (file?: File) => {
     if (!file) return;
     const path = `${firm.id}/logo-${Date.now()}.${file.name.split(".").pop()}`;
     const { error } = await supabase.storage.from("firm-assets").upload(path, file, { upsert: true });
-    if (error) return toast.error(error.message);
+    if (error) { toast.error(error.message); return; }
     await supabase.from("firms").update({ logo_path: path }).eq("id", firm.id);
     await refreshFirm(); toast.success("Logo updated");
   };

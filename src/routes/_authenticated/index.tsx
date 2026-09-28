@@ -4,7 +4,7 @@ import { PageHeader, Stat, StageBadge } from "@/components/app-shell";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { blankDeal, useDeals } from "@/lib/deals-store";
+import { useDeals } from "@/lib/deals-store";
 import { analyze, pct, sumBy, usd } from "@/lib/finance";
 
 export const Route = createFileRoute("/_authenticated/")({

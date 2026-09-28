@@ -8,7 +8,8 @@ import { pct, usd } from "@/lib/finance";
 const STATUSES = ["quoting", "term sheet", "best execution", "signed", "dropped"];
 
 export function LenderQuotes({ deal }: { deal: Deal }) {
-  const { rows, add, update, remove } = useDealRows<Quote>("deal_lender_quotes", deal.lenderQuotesHint ?? deal.id);
+  const { rows, add, update, remove } = useDealRows<Quote>("deal_lender_quotes", deal.id);
+  const r = analyze(deal.lines, deal.assumptions, deal.adjustments);
   const [f, setF] = useState({ lender: "", program: "", loanAmount: "", rate: "", amortYears: "", ioYears: "", dscrTest: "", feeBps: "", recourse: "Non-recourse" });
   const [status, setStatus] = useState(STATUSES[0]);
   const live = rows.filter((q) => q.status !== "dropped" && q.status !== "signed");
@@ -110,7 +111,7 @@ export function LenderQuotes({ deal }: { deal: Deal }) {
               const rs = live.map((q) => q.rate).filter((r): r is number => r != null);
               return rs.length > 1 ? `${Math.round((Math.max(...rs) - Math.min(...rs)) * 10000)} bps` : "—";
             })()],
-            ["DSCR your deal underwrites", `${deal.dscrHint?.toFixed(2) ?? ""}`.replace("NaN", "—") || "—"],
+            ["DSCR your deal underwrites", `${r.dscr.toFixed(2)}x`],
           ].map(([k, v]) => (
             <div key={k} className="bg-card p-4"><div className="text-xs text-muted-foreground">{k}</div><div className="num mt-1 text-lg">{v}</div></div>
           ))}

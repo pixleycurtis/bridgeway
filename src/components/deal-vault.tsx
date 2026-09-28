@@ -5,7 +5,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useDealRows, type DdItem } from "@/lib/deal-tables";
 import type { Deal } from "@/lib/deals-store";
-import { useWorkspace } from "@/lib/workspace";
 import { useServerFn } from "@tanstack/react-start";
 import { getSharedFileUrl } from "@/lib/deal-files.functions";
 
@@ -36,6 +35,8 @@ export function DealVault({ deal }: { deal: Deal }) {
   const [filesLoading, setFilesLoading] = useState(true);
   const [label, setLabel] = useState("");
   const [category, setCategory] = useState<string>(CATEGORIES[0] ?? "Financial");
+  const [linkingItem, setLinkingItem] = useState<string | null>(null);
+  const [selectedFile, setSelectedFile] = useState("");
 
   useEffect(() => {
     (async () => {
@@ -73,9 +74,10 @@ export function DealVault({ deal }: { deal: Deal }) {
   };
 
   const attachExisting = async (item: DdItem) => {
-    const match = files.find((f) => !f.kind || f.kind !== "dd");
-    if (!match) { toast.error("Upload a file to this item first"); return; }
-    await update(item.id, { received: true, file_path: match.path });
+    if (!selectedFile) return;
+    await update(item.id, { received: true, file_path: selectedFile });
+    setLinkingItem(null);
+    setSelectedFile("");
   };
 
   const addStandard = async () => {
@@ -125,7 +127,14 @@ export function DealVault({ deal }: { deal: Deal }) {
                       <div className="flex shrink-0 items-center gap-2">
                         {it.filePath && <Button variant="link" size="sm" className="h-auto p-0 text-xs" onClick={() => void openFile(it.filePath ?? "")}>Open file</Button>}
                         {deal.canEdit && !it.filePath && files.length > 0 && (
-                          <Button variant="link" size="sm" className="h-auto p-0 text-xs text-muted-foreground" onClick={() => attachExisting(it)}>Link a file</Button>
+                          linkingItem === it.id ? <span className="flex items-center gap-1">
+                            <select aria-label={`File for ${it.label}`} value={selectedFile} onChange={(e) => setSelectedFile(e.target.value)} className="max-w-36 rounded border bg-card px-1 py-1 text-xs">
+                              <option value="">Choose file…</option>
+                              {files.map((f) => <option key={f.id} value={f.path}>{f.name}</option>)}
+                            </select>
+                            <Button variant="ghost" size="sm" disabled={!selectedFile} onClick={() => void attachExisting(it)}>Link</Button>
+                            <Button variant="ghost" size="sm" onClick={() => { setLinkingItem(null); setSelectedFile(""); }}>Cancel</Button>
+                          </span> : <Button variant="link" size="sm" className="h-auto p-0 text-xs text-muted-foreground" onClick={() => { setLinkingItem(it.id); setSelectedFile(""); }}>Link a file</Button>
                         )}
                         {deal.canEdit && (
                           <label className="cursor-pointer text-xs text-muted-foreground hover:text-foreground">

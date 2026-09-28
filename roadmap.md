@@ -1,8 +1,8 @@
 # Roadmap
-- [ ] Approved daily deal desk: remove redundant subtitles and step hints, improve empty states.
-- [ ] Today: cross-deal task/date/DD queue with ownership filters and completion.
-- [ ] Deal and pipeline: next action/blocker signals from real task and DD records.
-- [ ] Trust pass: view-only file access, loading/error states, desktop/mobile verification.
+- [x] Approved daily deal desk: remove redundant subtitles and step hints, improve empty states.
+- [x] Today: cross-deal task/date/DD queue with ownership filters and completion.
+- [x] Deal and pipeline: next action/blocker signals from real task and DD records.
+- [x] Trust pass: view-only file access, loading/error states, desktop/mobile verification.
 - [x] Move Schedule to step 01 and order the deal workspace from setup through documents.
 - [x] Pipeline, deal workspace (reconcile / underwrite / retrade), insights
 - [x] PDF/CSV upload that auto-fills OM + T-12 columns (AI extraction)

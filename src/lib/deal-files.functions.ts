@@ -4,7 +4,7 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
 export const getSharedFileUrl = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input) => z.object({ dealId: z.string().uuid(), path: z.string().min(1).max(1024) }).parse(input))
+  .validator((input) => z.object({ dealId: z.string().uuid(), path: z.string().min(1).max(1024) }).parse(input))
   .handler(async ({ data, context }) => {
     // Both checks run as the viewer. Never sign an arbitrary path supplied by the browser.
     const { data: deal, error: dealError } = await context.supabase.from("deals").select("id, firm_id").eq("id", data.dealId).maybeSingle();

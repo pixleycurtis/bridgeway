@@ -29,7 +29,7 @@ function Today() {
   const [scope, setScope] = useState<Scope>("mine");
   const today = new Date().toLocaleDateString("en-CA");
   const dealById = new Map(active.map((d) => [d.id, d]));
-  const visible = tasks.filter((t) => !t.done && (scope === "team" || (scope === "unassigned" ? !t.assignee : t.assignee === me?.id)));
+  const visible = tasks.filter((t) => !t.done && (scope === "team" || (scope === "unassigned" ? !t.assignee : t.kind === "date" || t.assignee === me?.id)));
   const sorted = [...visible].sort((a, b) => actionPriority(a, today) - actionPriority(b, today) || (a.due_date ?? "9999").localeCompare(b.due_date ?? "9999"));
   const groups = [
     { title: "Overdue", rows: sorted.filter((t) => actionPriority(t, today) === 0) },

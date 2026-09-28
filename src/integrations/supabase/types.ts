@@ -302,6 +302,7 @@ export type Database = {
       is_firm_admin: { Args: { _firm: string }; Returns: boolean }
       is_firm_member: { Args: { _firm: string }; Returns: boolean }
       my_firm_id: { Args: never; Returns: string }
+      set_style_profile: { Args: { _profile: string }; Returns: undefined }
     }
     Enums: {
       firm_role: "admin" | "analyst" | "broker" | "property_manager" | "legal"

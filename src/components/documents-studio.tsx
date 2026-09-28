@@ -74,7 +74,6 @@ export function DocumentsStudio({ deal }: { deal: Deal }) {
       </div>
       <div>
         <div className="no-print mb-4 flex flex-wrap items-center justify-between gap-3">
-          <p className="text-sm text-muted-foreground">{meta.blurb}</p>
           <div className="flex gap-2">
             {deal.canEdit && <Button variant="ghost" size="sm" onClick={() => setEditing(!editing)}>{editing ? "Preview" : "Edit"}</Button>}
             {deal.canEdit && <Button variant="ghost" size="sm" onClick={reset}>Rebuild from numbers</Button>}

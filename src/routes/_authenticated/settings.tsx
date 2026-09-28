@@ -64,7 +64,7 @@ function Branding() {
   return (
     <section>
       <h2 className="font-display text-2xl">Branding</h2>
-      <p className="mt-1 text-sm text-muted-foreground">Used on every document you export and to tint your team's workspace.{!isAdmin && " Only admins can change it."}</p>
+      {!isAdmin && <p className="mt-1 text-sm text-muted-foreground">Only admins can change this.</p>}
       <div className="mt-5 space-y-4 rounded-md border bg-card p-5">
         <div className="flex items-center gap-4">
           <div className="flex h-16 w-16 items-center justify-center rounded border bg-background">
@@ -111,11 +111,7 @@ function Team() {
   return (
     <section>
       <h2 className="font-display text-2xl">Team</h2>
-      <p className="mt-1 text-sm text-muted-foreground">
-        {firm?.domain
-          ? <>Anyone who signs up with an <b>@{firm.domain}</b> email joins automatically and can edit every deal.</>
-          : "This is a personal workspace. Sign up with a work email to share a workspace with colleagues."}
-      </p>
+      {firm?.domain && <p className="mt-1 text-xs text-muted-foreground">@{firm.domain} · members can edit deals</p>}
       <ul className="mt-4 divide-y rounded-md border bg-card text-sm">
         {members.map((m) => (
           <li key={m.id} className="flex items-center justify-between gap-3 px-4 py-3">
@@ -158,7 +154,6 @@ function WritingStyle() {
   return (
     <section>
       <h2 className="font-display text-2xl">Writing style</h2>
-      <p className="mt-1 text-sm text-muted-foreground">Upload past memos, LOIs, lender packages, or letters. Keystone learns your firm's voice and uses it whenever AI writes a section.</p>
       <label className={`mt-4 flex cursor-pointer items-center justify-between rounded-md border border-dashed bg-card px-4 py-3 text-sm hover:border-primary ${busy ? "opacity-60" : ""}`}>
         <span>{busy ? "Studying your document…" : "Upload a past deliverable"}</span>
         <span className="text-xs text-muted-foreground">PDF, CSV, TXT</span>

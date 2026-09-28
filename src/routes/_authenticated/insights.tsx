@@ -135,7 +135,7 @@ function Insights() {
 
           <section>
             <h2 className="font-display text-2xl">The five factors</h2>
-            <p className="mt-1 text-sm text-muted-foreground">Averages across the filtered deals, using your underwritten numbers.</p>
+            <p className="mt-1 text-xs text-muted-foreground">Averages · filtered deals</p>
             <div className="mt-4 grid gap-4 md:grid-cols-2 xl:grid-cols-5">
               <Factor title="Return" rows={[["Levered IRR", pct(avg(e.map((x) => x.r.irr)))], ["Cash-on-cash Y1", pct(avg(e.map((x) => x.r.cashOnCash)))], ["Equity multiple", avg(e.map((x) => x.r.equityMultiple)).toFixed(2) + "x"], ["Going-in cap", pct(avg(e.map((x) => x.r.capRate)), 2)]]} />
               <Factor title="Risk" rows={[["DSCR", avg(e.map((x) => x.r.dscr)).toFixed(2) + "x"], ["Break-even occupancy", pct(avg(e.map((x) => x.breakEven)))], ["Debt yield", pct(avg(e.map((x) => x.debtYield)))], ["IRR if rate +1%", pct(avg(e.map((x) => x.rateShock)))]]}

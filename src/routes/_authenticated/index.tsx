@@ -1,5 +1,5 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { PageHeader, Stat, StageBadge } from "@/components/app-shell";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -138,7 +138,7 @@ function DealTable({ deals, cols, stall }: { deals: Deal[]; cols: ColumnKey[]; s
         <tbody>
           {deals.map((d) => {
             const { b, r, gap, days } = metrics(d);
-            const cell: Record<ColumnKey, React.ReactNode> = {
+            const cell: Record<ColumnKey, ReactNode> = {
               type: d.propertyType,
               stage: <StageBadge stage={d.stage} />,
               days: <span className={isOpen(d.stage) && days >= stall ? "text-warning" : ""}>{isOpen(d.stage) ? `${days}d` : "—"}</span>,

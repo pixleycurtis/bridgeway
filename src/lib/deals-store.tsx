@@ -30,7 +30,7 @@ const lines = (b: number[], t: number[], u: number[]): LineItem[] => {
     ["payroll", "Payroll", "expense"],
     ["reserves", "Replacement reserves", "expense"],
   ];
-  return defs.map(([key, label, kind], i) => ({ key, label, kind, broker: b[i], t12: t[i], underwrite: u[i] }));
+  return defs.map(([key, label, kind], i) => ({ key, label, kind, broker: b[i] ?? 0, t12: t[i] ?? 0, underwrite: u[i] ?? 0 }));
 };
 
 const baseA = (price: number, units: number): Assumptions => ({

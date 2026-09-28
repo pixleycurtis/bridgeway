@@ -73,8 +73,10 @@ export function useDealRows<T>(table: string, dealId: string | undefined, order 
   const [loading, setLoading] = useState(true);
   const reload = useCallback(async () => {
     if (!dealId) return;
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data } = await (supabase.from(table) as any).select("*").eq("deal_id", dealId).order(order);
+    /* eslint-disable @typescript-eslint/no-explicit-any */
+    const fromAny = (supabase.from as any)(table) as any;
+    const { data } = await fromAny.select("*").eq("deal_id", dealId).order(order);
+    /* eslint-enable @typescript-eslint/no-explicit-any */
     setRows(((data ?? []) as RowShape[]).map(camelize) as unknown as T[]);
     setLoading(false);
   }, [table, dealId, order]);
@@ -83,19 +85,20 @@ export function useDealRows<T>(table: string, dealId: string | undefined, order 
   const add = async (values: Partial<T> & RowShape) => {
     if (!dealId) return;
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data, error } = await (supabase.from(table) as any).insert({ ...values, deal_id: dealId }).select().single();
+    const fromAny = (supabase.from as any)(table);
+    const { data, error } = await fromAny.insert({ ...values, deal_id: dealId }).select().single();
     if (error || !data) { toast.error(error?.message ?? "Couldn't save"); return; }
     setRows((rs) => [...rs, camelize(data as RowShape) as unknown as T]);
   };
   const update = async (id: string, values: RowShape) => {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { error } = await (supabase.from(table) as any).update(values).eq("id", id);
+    const { error } = await (supabase.from as any)(table).update(values).eq("id", id);
     if (error) { toast.error(error.message); return; }
     setRows((rs) => rs.map((r) => ({ ...(r as RowShape), ...camelize(values) } as unknown as T)));
   };
   const remove = async (id: string) => {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { error } = await (supabase.from(table) as any).delete().eq("id", id);
+    const { error } = await (supabase.from as any)(table).delete().eq("id", id);
     if (error) { toast.error(error.message); return; }
     setRows((rs) => rs.filter((r) => (r as unknown as { id: string }).id !== id));
   };

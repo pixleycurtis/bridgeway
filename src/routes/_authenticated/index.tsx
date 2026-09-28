@@ -204,7 +204,7 @@ function Board({ deals, stages, stall, taskStats, onMove }: { deals: Deal[]; sta
                       <span className={r.irr < d.targetIrr ? "text-warning" : "text-positive"}>{pct(r.irr)} IRR</span>
                     </div>
                     {isOpen(s) && <div className={`mt-1 text-xs ${days >= stall ? "text-warning" : "text-muted-foreground"}`}>{days} days in stage{days >= stall ? " · stalled" : ""}</div>}
-                    {taskStats[d.id]?.overdue ? <div className="mt-0.5 text-xs text-destructive">{taskStats[d.id].overdue} overdue task{taskStats[d.id].overdue > 1 ? "s" : ""}</div> : null}
+                    {(() => { const od = taskStats[d.id]?.overdue ?? 0; return od ? <div className="mt-0.5 text-xs text-destructive">{od} overdue task{od > 1 ? "s" : ""}</div> : null; })()}
                   </div>
                 );
               })}

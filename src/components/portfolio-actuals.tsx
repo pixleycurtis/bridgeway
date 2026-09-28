@@ -29,7 +29,7 @@ export function ActualsEditor({ deal }: { deal: Deal }) {
     const rev = parseFloat(revenue) || 0, exp = parseFloat(expenses) || 0;
     if (!period.trim()) { toast.error("Add a period, e.g. 2026-Q1"); return; }
     const { error } = await supabase.from("deal_actuals").upsert({
-      deal_id: deal.id, period: period.trim(), revenue: rev, other_income: parseFloat(otherIncome) || 0, expenses: exp,
+      deal_id: deal.id, firm_id: deal.firmId, period: period.trim(), revenue: rev, other_income: parseFloat(otherIncome) || 0, expenses: exp,
     }, { onConflict: "deal_id,period" });
     if (error) { toast.error(error.message); return; }
     setRevenue(""); setOtherIncome(""); setExpenses(""); setPeriod(suggestPeriod());

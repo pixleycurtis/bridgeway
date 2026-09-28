@@ -83,7 +83,7 @@ export function defaultSections(kind: DocKind, d: Deal, firm: Firm | null): Sect
         s("Recommendation", `${buyer} seeks investment committee approval to acquire ${d.name}, a ${a.units}-unit property at ${where}, for ${usd(a.price)} at a ${pct(r.capRate, 2)} going-in cap rate. Our underwritten Year-1 NOI is ${usd(r.noi)}.`, "summary"),
         s("Returns", `Assuming ${pct(a.ltv, 0)} LTV financing at ${pct(a.rate, 2)} over ${a.amortYears} years, the deal produces ${pct(r.cashOnCash)} Year-1 cash-on-cash, a ${r.dscr.toFixed(2)}x DSCR and a ${pct(r.irr)} levered IRR (${r.equityMultiple.toFixed(2)}x equity multiple) against our ${pct(d.targetIrr)} target over a ${a.holdYears}-year hold.`, "returns"),
         s("Diligence & risk", `${d.adjustments.length ? `${d.adjustments.length} diligence finding${d.adjustments.length > 1 ? "s" : ""} valued at ${usd(oneTime + Math.round(annual / (r.capRate || 1)))} in total` : "No diligence findings to date"}. Key risks: expense growth above plan, exit cap expansion beyond ${pct(a.exitCap, 2)}, and capital program overruns on the ${usd(a.capex)} budget.`),
-        s("Financing status", r.quotes ? r.quotes : `Loan request sized at ${usd(r.loan)}; quotes to be compared before hard money.`),
+        s("Financing status", `Loan request sized at ${usd(r.loan)} (${pct(a.ltv, 0)} LTV); term sheets are being compared against our underwrite before we go hard.`),
       ];
     case "retrade":
       return [

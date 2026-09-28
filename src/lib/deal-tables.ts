@@ -63,6 +63,9 @@ export const isOverdue = (t: { done: boolean; dueDate: string | null }) =>
   !t.done && !!t.dueDate && t.dueDate < new Date().toISOString().slice(0, 10);
 
 type RowShape = { [k: string]: unknown };
+/** DB rows come back snake_case; the app reads camelCase. */
+const camelize = (r: RowShape): RowShape =>
+  Object.fromEntries(Object.entries(r).map(([k, v]) => [k.replace(/_([a-z])/g, (_, c: string) => c.toUpperCase()), v]));
 
 /** Small CRUD hook for per-deal tables. Never renders anything. */
 export function useDealRows<T>(table: string, dealId: string | undefined, order = "created_at") {
@@ -70,25 +73,29 @@ export function useDealRows<T>(table: string, dealId: string | undefined, order 
   const [loading, setLoading] = useState(true);
   const reload = useCallback(async () => {
     if (!dealId) return;
-    const { data } = await supabase.from(table).select("*").eq("deal_id", dealId).order(order);
-    setRows((data ?? []) as unknown as T[]);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data } = await (supabase.from(table) as any).select("*").eq("deal_id", dealId).order(order);
+    setRows(((data ?? []) as RowShape[]).map(camelize) as unknown as T[]);
     setLoading(false);
   }, [table, dealId, order]);
   useEffect(() => { void reload(); }, [reload]);
 
   const add = async (values: Partial<T> & RowShape) => {
     if (!dealId) return;
-    const { data, error } = await supabase.from(table).insert({ ...values, deal_id: dealId } as never).select().single();
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data, error } = await (supabase.from(table) as any).insert({ ...values, deal_id: dealId }).select().single();
     if (error || !data) { toast.error(error?.message ?? "Couldn't save"); return; }
-    setRows((rs) => [...rs, data as unknown as T]);
+    setRows((rs) => [...rs, camelize(data as RowShape) as unknown as T]);
   };
   const update = async (id: string, values: RowShape) => {
-    const { error } = await supabase.from(table).update(values as never).eq("id", id);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { error } = await (supabase.from(table) as any).update(values).eq("id", id);
     if (error) { toast.error(error.message); return; }
-    setRows((rs) => rs.map((r) => ({ ...(r as RowShape), ...values } as unknown as T)));
+    setRows((rs) => rs.map((r) => ({ ...(r as RowShape), ...camelize(values) } as unknown as T)));
   };
   const remove = async (id: string) => {
-    const { error } = await supabase.from(table).delete().eq("id", id);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { error } = await (supabase.from(table) as any).delete().eq("id", id);
     if (error) { toast.error(error.message); return; }
     setRows((rs) => rs.filter((r) => (r as unknown as { id: string }).id !== id));
   };

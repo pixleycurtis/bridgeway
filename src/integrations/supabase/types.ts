@@ -14,6 +14,108 @@ export type Database = {
   }
   public: {
     Tables: {
+      deal_actuals: {
+        Row: {
+          created_at: string
+          deal_id: string
+          expenses: number
+          firm_id: string
+          id: string
+          notes: string | null
+          other_income: number
+          period: string
+          revenue: number
+        }
+        Insert: {
+          created_at?: string
+          deal_id: string
+          expenses?: number
+          firm_id: string
+          id?: string
+          notes?: string | null
+          other_income?: number
+          period: string
+          revenue?: number
+        }
+        Update: {
+          created_at?: string
+          deal_id?: string
+          expenses?: number
+          firm_id?: string
+          id?: string
+          notes?: string | null
+          other_income?: number
+          period?: string
+          revenue?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "deal_actuals_deal_id_fkey"
+            columns: ["deal_id"]
+            isOneToOne: false
+            referencedRelation: "deals"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "deal_actuals_firm_id_fkey"
+            columns: ["firm_id"]
+            isOneToOne: false
+            referencedRelation: "firms"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      deal_dd_items: {
+        Row: {
+          category: string
+          created_at: string
+          created_by: string | null
+          deal_id: string
+          file_path: string | null
+          firm_id: string
+          id: string
+          label: string
+          received: boolean
+        }
+        Insert: {
+          category?: string
+          created_at?: string
+          created_by?: string | null
+          deal_id: string
+          file_path?: string | null
+          firm_id: string
+          id?: string
+          label: string
+          received?: boolean
+        }
+        Update: {
+          category?: string
+          created_at?: string
+          created_by?: string | null
+          deal_id?: string
+          file_path?: string | null
+          firm_id?: string
+          id?: string
+          label?: string
+          received?: boolean
+        }
+        Relationships: [
+          {
+            foreignKeyName: "deal_dd_items_deal_id_fkey"
+            columns: ["deal_id"]
+            isOneToOne: false
+            referencedRelation: "deals"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "deal_dd_items_firm_id_fkey"
+            columns: ["firm_id"]
+            isOneToOne: false
+            referencedRelation: "firms"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       deal_documents: {
         Row: {
           deal_id: string
@@ -84,6 +186,75 @@ export type Database = {
           },
         ]
       }
+      deal_lender_quotes: {
+        Row: {
+          amort_years: number | null
+          created_at: string
+          deal_id: string
+          dscr_test: number | null
+          fee_bps: number | null
+          firm_id: string
+          id: string
+          io_years: number | null
+          lender: string
+          loan_amount: number | null
+          notes: string | null
+          program: string | null
+          rate: number | null
+          recourse: string | null
+          status: string
+        }
+        Insert: {
+          amort_years?: number | null
+          created_at?: string
+          deal_id: string
+          dscr_test?: number | null
+          fee_bps?: number | null
+          firm_id: string
+          id?: string
+          io_years?: number | null
+          lender: string
+          loan_amount?: number | null
+          notes?: string | null
+          program?: string | null
+          rate?: number | null
+          recourse?: string | null
+          status?: string
+        }
+        Update: {
+          amort_years?: number | null
+          created_at?: string
+          deal_id?: string
+          dscr_test?: number | null
+          fee_bps?: number | null
+          firm_id?: string
+          id?: string
+          io_years?: number | null
+          lender?: string
+          loan_amount?: number | null
+          notes?: string | null
+          program?: string | null
+          rate?: number | null
+          recourse?: string | null
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "deal_lender_quotes_deal_id_fkey"
+            columns: ["deal_id"]
+            isOneToOne: false
+            referencedRelation: "deals"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "deal_lender_quotes_firm_id_fkey"
+            columns: ["firm_id"]
+            isOneToOne: false
+            referencedRelation: "firms"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       deal_shares: {
         Row: {
           created_at: string
@@ -115,6 +286,67 @@ export type Database = {
             columns: ["deal_id"]
             isOneToOne: false
             referencedRelation: "deals"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      deal_tasks: {
+        Row: {
+          assignee: string | null
+          created_at: string
+          created_by: string | null
+          deal_id: string
+          done: boolean
+          due_date: string | null
+          firm_id: string
+          id: string
+          kind: string
+          title: string
+        }
+        Insert: {
+          assignee?: string | null
+          created_at?: string
+          created_by?: string | null
+          deal_id: string
+          done?: boolean
+          due_date?: string | null
+          firm_id: string
+          id?: string
+          kind?: string
+          title: string
+        }
+        Update: {
+          assignee?: string | null
+          created_at?: string
+          created_by?: string | null
+          deal_id?: string
+          done?: boolean
+          due_date?: string | null
+          firm_id?: string
+          id?: string
+          kind?: string
+          title?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "deal_tasks_assignee_fkey"
+            columns: ["assignee"]
+            isOneToOne: false
+            referencedRelation: "firm_members"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "deal_tasks_deal_id_fkey"
+            columns: ["deal_id"]
+            isOneToOne: false
+            referencedRelation: "deals"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "deal_tasks_firm_id_fkey"
+            columns: ["firm_id"]
+            isOneToOne: false
+            referencedRelation: "firms"
             referencedColumns: ["id"]
           },
         ]
@@ -183,6 +415,41 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "deals_firm_id_fkey"
+            columns: ["firm_id"]
+            isOneToOne: false
+            referencedRelation: "firms"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      firm_defaults: {
+        Row: {
+          created_at: string
+          defaults: Json
+          firm_id: string
+          id: string
+          market: string
+          property_type: string
+        }
+        Insert: {
+          created_at?: string
+          defaults?: Json
+          firm_id: string
+          id?: string
+          market?: string
+          property_type?: string
+        }
+        Update: {
+          created_at?: string
+          defaults?: Json
+          firm_id?: string
+          id?: string
+          market?: string
+          property_type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "firm_defaults_firm_id_fkey"
             columns: ["firm_id"]
             isOneToOne: false
             referencedRelation: "firms"

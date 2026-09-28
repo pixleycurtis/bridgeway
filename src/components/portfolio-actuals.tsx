@@ -9,7 +9,7 @@ import { analyze, pct, usd } from "@/lib/finance";
 
 /** Quarterly actual results for one closed deal, against the underwrite. */
 export function ActualsEditor({ deal }: { deal: Deal }) {
-  const { rows, add, update, remove } = useDealRows<Actual>("deal_actuals", deal.id, "period");
+  const { rows, add, update, remove, reload } = useDealRows<Actual>("deal_actuals", deal.id, "period");
   const [period, setPeriod] = useState(suggestPeriod());
   const [revenue, setRevenue] = useState("");
   const [otherIncome, setOtherIncome] = useState("");
@@ -22,9 +22,7 @@ export function ActualsEditor({ deal }: { deal: Deal }) {
     const exp = rows.reduce((s, a) => s + a.expenses, 0);
     return { rev, oth, exp, noi: rev + oth - exp };
   }, [rows]);
-  const annualized = totals.noi / Math.max(1, rows.length) * (rows.length ? 4 / 4 : 1) * (rows.length / (rows.length || 1)) * (4 / Math.max(rows.length, 1) || 0);
   const projected = rows.length ? (totals.noi / rows.length) * 4 : 0;
-  void annualized;
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -35,8 +33,7 @@ export function ActualsEditor({ deal }: { deal: Deal }) {
     }, { onConflict: "deal_id,period" });
     if (error) { toast.error(error.message); return; }
     setRevenue(""); setOtherIncome(""); setExpenses(""); setPeriod(suggestPeriod());
-    await supabase.from("deal_actuals").select("*").eq("deal_id", deal.id);
-    window.location.reload;
+    await reload();
   };
 
   return (

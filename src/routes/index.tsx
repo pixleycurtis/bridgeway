@@ -1,10 +1,10 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
-import { PageHeader, Stat } from "@/components/app-shell";
+import { PageHeader, Stat, StageBadge } from "@/components/app-shell";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { STAGES, blankDeal, useDeals } from "@/lib/deals-store";
+import { blankDeal, useDeals } from "@/lib/deals-store";
 import { analyze, pct, sumBy, usd } from "@/lib/finance";
 
 export const Route = createFileRoute("/")({
@@ -78,11 +78,6 @@ function Pipeline() {
   );
 }
 
-export function StageBadge({ stage }: { stage: string }) {
-  const tone = stage === "Closed" ? "bg-accent text-accent-foreground" : stage === "Passed" ? "bg-muted text-muted-foreground" : stage === "LOI" || stage === "Under contract" ? "bg-warning-soft text-foreground" : "bg-secondary text-secondary-foreground";
-  return <span className={`inline-block rounded px-2 py-0.5 text-xs ${tone}`}>{stage}</span>;
-}
-
 function NewDeal() {
   const { add } = useDeals();
   const nav = useNavigate();
@@ -108,4 +103,3 @@ function NewDeal() {
     </Dialog>
   );
 }
-export const _stages = STAGES;

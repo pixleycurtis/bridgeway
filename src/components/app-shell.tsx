@@ -71,3 +71,9 @@ export function Stat({ label, value, tone }: { label: string; value: string; ton
     </div>
   );
 }
+
+export function StageBadge({ stage }: { stage: string }) {
+  const tone = stage === "Closed" ? "bg-accent text-accent-foreground" : stage === "Passed" ? "bg-muted text-muted-foreground" : stage === "LOI" || stage === "Under contract" ? "bg-warning-soft text-foreground" : "bg-secondary text-secondary-foreground";
+  return <span className={`inline-block rounded px-2 py-0.5 text-xs ${tone}`}>{stage}</span>;
+}
+

@@ -100,15 +100,16 @@ function Reconcile({ deal, set, onNext }: { deal: Deal; set: (p: Partial<Deal>) 
   const edit = (key: string, col: keyof LineItem, v: number) =>
     set({ lines: deal.lines.map((l) => (l.key === key ? { ...l, [col]: v } : l)) });
   const tot = { b: sumBy(deal.lines, "broker"), t: sumBy(deal.lines, "t12"), u: sumBy(deal.lines, "underwrite") };
+  const th = settings.flagThreshold;
   const flags = deal.lines
     .map((l) => ({ l, d: l.t12 - l.broker, p: l.broker ? (l.t12 - l.broker) / l.broker : l.t12 ? 1 : 0 }))
-    .filter((x) => Math.abs(x.p) >= 0.1 && Math.abs(x.d) >= 1000)
+    .filter((x) => Math.abs(x.p) >= th && Math.abs(x.d) >= 1000)
     .sort((a, b) => Math.abs(b.d) - Math.abs(a.d));
   return (
     <div className="grid gap-8 xl:grid-cols-[1fr_320px]">
       <div>
         <h2 className="font-display text-2xl">Broker said vs. the books</h2>
-        <p className="mt-1 max-w-2xl text-sm text-muted-foreground">Enter the OM pro forma and trailing-12 side by side. Anything off by 10%+ gets flagged, and your underwrite column is what drives returns.</p>
+        <p className="mt-1 max-w-2xl text-sm text-muted-foreground">Enter the OM pro forma and trailing-12 side by side. Anything off by {Math.round(th * 100)}%+ gets flagged, and your underwrite column is what drives returns.</p>
         <div className="mt-5 overflow-x-auto rounded-md border bg-card">
           <table className="w-full text-sm">
             <thead className="border-b text-[11px] uppercase tracking-widest text-muted-foreground">
@@ -123,8 +124,8 @@ function Reconcile({ deal, set, onNext }: { deal: Deal; set: (p: Partial<Deal>) 
             <tbody>
               {deal.lines.map((l) => {
                 const g = l.broker ? (l.t12 - l.broker) / l.broker : 0;
-                const bad = l.kind === "expense" ? g > 0.1 : g < -0.1;
-                const warn = Math.abs(g) >= 0.1;
+                const bad = l.kind === "expense" ? g > th : g < -th;
+                const warn = Math.abs(g) >= th;
                 return (
                   <tr key={l.key} className="border-b last:border-0">
                     <td className="px-4 py-1.5">{l.label}<span className="ml-2 text-xs text-muted-foreground">{l.kind === "income" ? "income" : ""}</span></td>
@@ -160,7 +161,7 @@ function Reconcile({ deal, set, onNext }: { deal: Deal; set: (p: Partial<Deal>) 
           <div className="text-[11px] uppercase tracking-widest text-muted-foreground">Flagged discrepancies</div>
           <div className="num mt-1 text-3xl">{flags.length}</div>
           <ul className="mt-4 space-y-3 text-sm">
-            {flags.length === 0 && <li className="text-muted-foreground">Nothing off by more than 10%.</li>}
+            {flags.length === 0 && <li className="text-muted-foreground">Nothing off by more than {Math.round(th * 100)}%.</li>}
             {flags.map(({ l, d, p }) => (
               <li key={l.key} className="border-t pt-3">
                 <div className="flex justify-between"><span>{l.label}</span><span className="num text-destructive">{d > 0 ? "+" : ""}{usd(d, true)}</span></div>

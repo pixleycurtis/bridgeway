@@ -41,9 +41,6 @@ export function LenderQuotes({ deal }: { deal: Deal }) {
           {best ? <>Best rate so far: <b className="num text-foreground">{pct(best.rate ?? 0, 2)}</b> from {best.lender}</> : "Add term sheets to compare"}
         </span>
       </div>
-      <p className="mt-1 text-sm text-muted-foreground">
-        Your underwrite assumes {pct(deal.assumptions.rate, 2)} with {deal.assumptions.amortYears}-year amortization — every quote is measured against that.
-      </p>
 
       {deal.canEdit && (
         <form onSubmit={submit} className="mt-4 flex flex-wrap items-end gap-2 rounded-md border bg-card p-4">

@@ -17,8 +17,7 @@ const KEY_DATES = [
 ];
 
 export function DealSchedule({ deal }: { deal: Deal }) {
-  const { firm } = useWorkspace();
-  const { rows, add, update, remove } = useDealRows<Task>("deal_tasks", deal.id, "due_date");
+  const { rows, loading, error, reload, add, update, remove } = useDealRows<Task>("deal_tasks", deal.id, "due_date");
   const [members, setMembers] = useState<Member[]>([]);
   const [dateTitle, setDateTitle] = useState<string>("Due diligence expiration");
   const [dateVal, setDateVal] = useState("");
@@ -56,7 +55,6 @@ export function DealSchedule({ deal }: { deal: Deal }) {
     <div className="grid gap-8 xl:grid-cols-2">
       <div>
         <h2 className="font-display text-2xl">Key dates</h2>
-        <p className="mt-1 text-sm text-muted-foreground">The hard dates in escrow. Miss one and the seller keeps your deposit.</p>
         {deal.canEdit && (
           <form onSubmit={addDate} className="mt-4 flex flex-wrap gap-2">
             <select value={dateTitle} onChange={(e) => setDateTitle(e.target.value)} className="h-9 rounded-md border bg-card px-2 text-sm">
@@ -68,7 +66,8 @@ export function DealSchedule({ deal }: { deal: Deal }) {
           </form>
         )}
         <ul className="mt-4 divide-y rounded-md border bg-card">
-          {dates.length === 0 && <li className="p-4 text-sm text-muted-foreground">No key dates yet.</li>}
+          {loading && <li className="p-4 text-sm text-muted-foreground">Loading dates…</li>}
+          {!loading && !error && dates.length === 0 && <li className="p-4 text-sm text-muted-foreground">{deal.canEdit ? "Set the next contract deadline above." : "No key dates scheduled."}</li>}
           {dates.map((d) => (
             <li key={d.id} className="flex items-center justify-between gap-3 px-4 py-3 text-sm">
               <div>
@@ -78,7 +77,7 @@ export function DealSchedule({ deal }: { deal: Deal }) {
               {deal.canEdit ? (
                 <div className="flex items-center gap-3">
                   <input type="date" value={d.dueDate ?? ""} onChange={(e) => update(d.id, { due_date: e.target.value })} className="rounded border bg-background px-1.5 py-1 text-xs" />
-                  <button className="text-xs text-muted-foreground hover:text-destructive" onClick={() => remove(d.id)}>Remove</button>
+                  <Button variant="ghost" size="sm" className="text-xs text-muted-foreground hover:text-destructive" onClick={() => remove(d.id)}>Remove</Button>
                 </div>
               ) : <span className="text-xs text-muted-foreground">—</span>}
             </li>
@@ -90,7 +89,6 @@ export function DealSchedule({ deal }: { deal: Deal }) {
           <h2 className="font-display text-2xl">Tasks</h2>
           <span className="text-xs text-muted-foreground">{open.length} open{overdue.length ? <span className="text-destructive"> · {overdue.length} overdue</span> : ""}</span>
         </div>
-        <p className="mt-1 text-sm text-muted-foreground">Assign work to your team. Overdue items show up on the pipeline.</p>
         {deal.canEdit && (
           <form onSubmit={addTask} className="mt-4 flex flex-wrap gap-2">
             <Input className="h-9 min-w-40 flex-1" placeholder="e.g. Order title commitment" value={taskTitle} onChange={(e) => setTaskTitle(e.target.value)} />
@@ -103,7 +101,8 @@ export function DealSchedule({ deal }: { deal: Deal }) {
           </form>
         )}
         <ul className="mt-4 divide-y rounded-md border bg-card">
-          {tasks.length === 0 && <li className="p-4 text-sm text-muted-foreground">No tasks yet.</li>}
+          {loading && <li className="p-4 text-sm text-muted-foreground">Loading tasks…</li>}
+          {!loading && !error && tasks.length === 0 && <li className="p-4 text-sm text-muted-foreground">{deal.canEdit ? "Assign the next piece of work above." : "No tasks assigned."}</li>}
           {tasks.map((t) => (
             <li key={t.id} className="flex items-center justify-between gap-3 px-4 py-3 text-sm">
               <label className="flex min-w-0 items-center gap-3">
@@ -117,11 +116,12 @@ export function DealSchedule({ deal }: { deal: Deal }) {
                 <span className={`num text-xs ${isOverdue(t) ? "text-destructive" : "text-muted-foreground"}`}>
                   {t.dueDate ? (t.done ? t.dueDate : `${isOverdue(t) ? "Overdue · " : "Due "}${t.dueDate}`) : "No due date"}
                 </span>
-                {deal.canEdit && <button className="text-xs text-muted-foreground hover:text-destructive" onClick={() => remove(t.id)}>Remove</button>}
+                {deal.canEdit && <Button variant="ghost" size="sm" className="text-xs text-muted-foreground hover:text-destructive" onClick={() => remove(t.id)}>Remove</Button>}
               </div>
             </li>
           ))}
         </ul>
+        {error && <div role="alert" className="mt-3 text-sm text-destructive">Couldn't load schedule. <Button variant="link" size="sm" onClick={() => void reload()}>Retry</Button></div>}
       </div>
     </div>
   );

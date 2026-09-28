@@ -40,9 +40,7 @@ export function AssumptionsLibrary() {
   return (
     <section>
       <h2 className="font-display text-2xl">Assumptions library</h2>
-      <p className="mt-1 text-sm text-muted-foreground">
-        House defaults per market and property type. Every new deal you start prefills from the matching row, so analysts underwrite consistently.{!isAdmin && " Only admins can change it."}
-      </p>
+      {!isAdmin && <p className="mt-1 text-sm text-muted-foreground">Only admins can change these.</p>}
       <ul className="mt-4 divide-y rounded-md border bg-card text-sm">
         {rows.length === 0 && <li className="p-4 text-muted-foreground">No saved defaults yet — new deals use the firm settings.</li>}
         {rows.map((r) => (

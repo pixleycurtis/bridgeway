@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useDealRows, type Quote } from "@/lib/deal-tables";
 import type { Deal } from "@/lib/deals-store";
-import { pct, usd } from "@/lib/finance";
+import { analyze, pct, usd } from "@/lib/finance";
 
 const STATUSES = ["quoting", "term sheet", "best execution", "signed", "dropped"];
 

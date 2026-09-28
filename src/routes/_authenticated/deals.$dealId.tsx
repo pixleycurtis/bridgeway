@@ -7,6 +7,8 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { STAGES, useDeals, type Deal, type Stage } from "@/lib/deals-store";
 import { analyze, pct, solvePrice, sumBy, usd, type Assumptions, type LineItem } from "@/lib/finance";
+import { DocumentsStudio } from "@/components/documents-studio";
+import { ShareDialog, UploadPanel } from "@/components/deal-extras";
 
 export const Route = createFileRoute("/_authenticated/deals/$dealId")({
   head: () => ({
@@ -24,6 +26,7 @@ const STEPS = [
   { id: "reconcile", n: "01", label: "Reconcile", hint: "Broker OM vs. T-12" },
   { id: "underwrite", n: "02", label: "Underwrite", hint: "Assumptions & returns" },
   { id: "retrade", n: "03", label: "Diligence & retrade", hint: "Findings to price" },
+  { id: "documents", n: "04", label: "Documents", hint: "Branded deliverables" },
 ] as const;
 type StepId = (typeof STEPS)[number]["id"];
 
@@ -31,10 +34,12 @@ function DealPage() {
   const { dealId } = Route.useParams();
   const { deals, update } = useDeals();
   const deal = deals.find((d) => d.id === dealId);
-  const [step, setStep] = useState<StepId>("reconcile");
-  if (!deal) return <div className="p-10">Deal not found. <Link to="/" className="underline">Back to pipeline</Link></div>;
+  const [step, setStep] = useState<StepId | null>(null);
+  const { loading } = useDeals();
+  if (!deal) return loading ? <div className="p-10 text-sm text-muted-foreground">Loading…</div> : <div className="p-10">Deal not found. <Link to="/" className="underline">Back to pipeline</Link></div>;
   const r = analyze(deal.lines, deal.assumptions, deal.adjustments);
-  const set = (p: Partial<Deal>) => update(deal.id, p);
+  const set = (p: Partial<Deal>) => { if (deal.canEdit) update(deal.id, p); };
+  const current: StepId = step ?? (deal.canEdit ? "reconcile" : "documents");
 
   return (
     <div>
@@ -45,10 +50,15 @@ function DealPage() {
             <h1 className="font-display text-4xl tracking-tight">{deal.name}</h1>
             <p className="text-sm text-muted-foreground">{[deal.address, deal.market].filter(Boolean).join(" · ")} · {deal.assumptions.units} units</p>
           </div>
-          <select value={deal.stage} onChange={(e) => set({ stage: e.target.value as Stage })}
-            className="rounded-md border bg-card px-3 py-2 text-sm">
-            {STAGES.map((s) => <option key={s}>{s}</option>)}
-          </select>
+          {deal.canEdit ? (
+            <div className="flex gap-2">
+              <ShareDialog deal={deal} />
+              <select value={deal.stage} onChange={(e) => set({ stage: e.target.value as Stage })}
+                className="rounded-md border bg-card px-3 py-2 text-sm">
+                {STAGES.map((s) => <option key={s}>{s}</option>)}
+              </select>
+            </div>
+          ) : <span className="rounded bg-secondary px-3 py-1.5 text-xs text-secondary-foreground">Shared with you · view only</span>}
         </div>
         <div className="mt-6 flex flex-wrap gap-y-3">
           <Stat label="Price" value={usd(deal.assumptions.price, true)} />
@@ -60,7 +70,7 @@ function DealPage() {
         <nav className="mt-6 flex gap-1 overflow-x-auto">
           {STEPS.map((s) => (
             <button key={s.id} onClick={() => setStep(s.id)}
-              className={`-mb-px border-b-2 px-4 py-3 text-left transition-colors ${step === s.id ? "border-primary text-foreground" : "border-transparent text-muted-foreground hover:text-foreground"}`}>
+              className={`-mb-px border-b-2 px-4 py-3 text-left transition-colors ${current === s.id ? "border-primary text-foreground" : "border-transparent text-muted-foreground hover:text-foreground"}`}>
               <span className="num mr-2 text-xs">{s.n}</span>
               <span className="text-sm font-medium">{s.label}</span>
               <span className="ml-2 hidden text-xs text-muted-foreground lg:inline">{s.hint}</span>
@@ -69,9 +79,13 @@ function DealPage() {
         </nav>
       </div>
       <div className="px-6 py-8 md:px-10">
-        {step === "reconcile" && <Reconcile deal={deal} set={set} onNext={() => setStep("underwrite")} />}
-        {step === "underwrite" && <Underwrite deal={deal} set={set} onNext={() => setStep("retrade")} />}
-        {step === "retrade" && <Retrade deal={deal} set={set} />}
+        {current === "documents" ? <DocumentsStudio deal={deal} /> : (
+          <fieldset disabled={!deal.canEdit} className="min-w-0">
+            {current === "reconcile" && <Reconcile deal={deal} set={set} onNext={() => setStep("underwrite")} />}
+            {current === "underwrite" && <Underwrite deal={deal} set={set} onNext={() => setStep("retrade")} />}
+            {current === "retrade" && <Retrade deal={deal} set={set} onNext={() => setStep("documents")} />}
+          </fieldset>
+        )}
       </div>
     </div>
   );
@@ -140,7 +154,8 @@ function Reconcile({ deal, set, onNext }: { deal: Deal; set: (p: Partial<Deal>) 
         </div>
         <div className="mt-4 flex justify-end"><Button onClick={onNext}>Continue to underwriting →</Button></div>
       </div>
-      <aside>
+      <aside className="space-y-4">
+        {deal.canEdit && <UploadPanel deal={deal} set={set} />}
         <div className="rounded-md border bg-card p-5">
           <div className="text-[11px] uppercase tracking-widest text-muted-foreground">Flagged discrepancies</div>
           <div className="num mt-1 text-3xl">{flags.length}</div>
@@ -154,7 +169,6 @@ function Reconcile({ deal, set, onNext }: { deal: Deal; set: (p: Partial<Deal>) 
             ))}
           </ul>
         </div>
-        <p className="mt-3 text-xs text-muted-foreground">Coming next: drop in the OM and T-12 PDFs and these columns fill themselves.</p>
       </aside>
     </div>
   );
@@ -246,7 +260,7 @@ function Underwrite({ deal, set, onNext }: { deal: Deal; set: (p: Partial<Deal>)
   );
 }
 
-function Retrade({ deal, set }: { deal: Deal; set: (p: Partial<Deal>) => void }) {
+function Retrade({ deal, set, onNext }: { deal: Deal; set: (p: Partial<Deal>) => void; onNext: () => void }) {
   const [label, setLabel] = useState("");
   const [amount, setAmount] = useState("");
   const [type, setType] = useState<"annual" | "onetime">("onetime");
@@ -323,12 +337,13 @@ We remain committed to closing on the current timeline and look forward to your 
         </div>
       </div>
       <div>
-        <div className="flex items-center justify-between">
-          <h2 className="font-display text-2xl">Retrade letter</h2>
-          <Button variant="outline" size="sm" onClick={() => { navigator.clipboard.writeText(letter); toast.success("Letter copied"); }}>Copy</Button>
-        </div>
+        <h2 className="font-display text-2xl">Retrade letter</h2>
         <p className="mt-1 text-sm text-muted-foreground">Drafted from your findings. Edit before sending.</p>
-        <Textarea key={letter} defaultValue={letter} className="mt-4 min-h-[480px] bg-card font-display text-base leading-relaxed" />
+        <Textarea key={letter} defaultValue={letter} className="mt-4 min-h-[420px] bg-card font-display text-base leading-relaxed" />
+        <div className="mt-3 flex justify-end gap-2">
+          <Button variant="outline" size="sm" type="button" onClick={() => { navigator.clipboard.writeText(letter); toast.success("Letter copied"); }}>Copy</Button>
+          <Button size="sm" type="button" onClick={onNext}>Open on letterhead →</Button>
+        </div>
       </div>
     </div>
   );

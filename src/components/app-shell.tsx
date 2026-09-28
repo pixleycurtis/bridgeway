@@ -15,9 +15,9 @@ export function AppShell({ children }: { children: ReactNode }) {
             {logoUrl && <img src={logoUrl} alt="" className="h-8 w-8 rounded bg-card object-contain p-0.5" />}
             <span className="truncate font-display text-2xl tracking-tight text-sidebar-accent-foreground">{firm?.name ?? "Keystone"}</span>
           </Link>
-          <p className="mt-1 text-xs text-sidebar-foreground/60">Keystone · buy-side workspace</p>
         </div>
         <nav className="flex flex-col gap-0.5 px-3 text-sm">
+          <NavItem to="/today">Today</NavItem>
           <NavItem to="/">Pipeline</NavItem>
           <NavItem to="/portfolio">Portfolio</NavItem>
           <NavItem to="/insights">Insights</NavItem>
@@ -40,10 +40,12 @@ export function AppShell({ children }: { children: ReactNode }) {
         </div>
       </aside>
       <div className="flex min-w-0 flex-1 flex-col">
-        <header className="flex items-center gap-4 border-b px-4 py-3 md:hidden">
+        <header className="flex flex-wrap items-center gap-x-4 gap-y-2 border-b px-4 py-3 md:hidden">
           <Link to="/" className="font-display text-xl">{firm?.name ?? "Keystone"}</Link>
+          <Link to="/today" className="text-sm text-muted-foreground">Today</Link>
           <Link to="/" className="text-sm text-muted-foreground">Pipeline</Link>
           <Link to="/portfolio" className="text-sm text-muted-foreground">Portfolio</Link>
+          <Link to="/insights" className="text-sm text-muted-foreground">Insights</Link>
           <Link to="/settings" className="text-sm text-muted-foreground">Settings</Link>
           <button onClick={signOut} className="ml-auto text-sm text-muted-foreground">Sign out</button>
         </header>
@@ -53,7 +55,7 @@ export function AppShell({ children }: { children: ReactNode }) {
   );
 }
 
-function NavItem({ to, children }: { to: "/" | "/portfolio" | "/insights" | "/settings"; children: ReactNode }) {
+function NavItem({ to, children }: { to: "/" | "/today" | "/portfolio" | "/insights" | "/settings"; children: ReactNode }) {
   return (
     <Link to={to} activeOptions={{ exact: true }}
       className="rounded px-2 py-1.5 text-sidebar-foreground/80 hover:bg-sidebar-accent"

@@ -1,0 +1,1 @@
+CREATE POLICY "shared viewers read deal file metadata" ON public.deal_files FOR SELECT TO authenticated USING (public.can_view_deal(deal_id));

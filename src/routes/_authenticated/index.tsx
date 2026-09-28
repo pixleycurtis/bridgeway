@@ -8,6 +8,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { useDeals, type Deal } from "@/lib/deals-store";
 import { analyze, pct, sumBy, usd } from "@/lib/finance";
 import { useTaskStats } from "@/lib/deal-tables";
+import { nextDealAction, useDealActions, type ActionTask, type ActionRequest } from "@/lib/deal-actions";
 import { useWorkspace } from "@/lib/workspace";
 import { PIPELINE_COLUMNS, allStages, daysInStage, isOpen, type ColumnKey } from "@/lib/firm-settings";
 
@@ -51,6 +52,7 @@ function Pipeline() {
   const active = filtered.filter((d) => isOpen(d.stage));
   const stalled = active.filter((d) => daysInStage(d.stageHistory, d.createdAt) >= settings.stallDays);
   const taskStats = useTaskStats(deals.map((d) => d.id));
+  const { tasks, requests, error: actionsError } = useDealActions(deals.filter((d) => isOpen(d.stage)));
   const overdueTotal = Object.values(taskStats).reduce((s, x) => s + x.overdue, 0);
   const count = (s: string) => filtered.filter((d) => (s === "All" ? true : s === "Active" ? isOpen(d.stage) : d.stage === s)).length;
 
@@ -106,7 +108,8 @@ function Pipeline() {
       </div>
 
       <div className="px-6 pb-12 pt-4 md:px-10">
-        {view === "table" ? <DealTable deals={inTab} cols={cols} stall={settings.stallDays} taskStats={taskStats} /> : <Board deals={filtered} stages={stages} stall={settings.stallDays} taskStats={taskStats} onMove={(id, stage) => update(id, { stage })} />}
+        {actionsError && <p role="alert" className="pb-3 text-xs text-destructive">Deal priorities couldn't be loaded.</p>}
+        {view === "table" ? <DealTable deals={inTab} cols={cols} stall={settings.stallDays} taskStats={taskStats} tasks={tasks} requests={requests} /> : <Board deals={filtered} stages={stages} stall={settings.stallDays} taskStats={taskStats} tasks={tasks} requests={requests} onMove={(id, stage) => update(id, { stage })} />}
       </div>
     </div>
   );
@@ -127,9 +130,9 @@ function metrics(d: Deal) {
   return { b, r, gap: r.noi - b, days: daysInStage(d.stageHistory, d.createdAt) };
 }
 
-function DealTable({ deals, cols, stall, taskStats }: { deals: Deal[]; cols: ColumnKey[]; stall: number; taskStats: Record<string, { open: number; overdue: number }> }) {
+function DealTable({ deals, cols, stall, taskStats, tasks, requests }: { deals: Deal[]; cols: ColumnKey[]; stall: number; taskStats: Record<string, { open: number; overdue: number }>; tasks: ActionTask[]; requests: ActionRequest[] }) {
   const shown = PIPELINE_COLUMNS.filter((c) => cols.includes(c.key));
-  if (!deals.length) return <p className="rounded-md border bg-card p-8 text-center text-sm text-muted-foreground">No deals here yet.</p>;
+  if (!deals.length) return <p className="border-t py-8 text-center text-sm text-muted-foreground">No deals in this view. Try another stage or start a new deal.</p>;
   return (
     <div className="overflow-x-auto rounded-md border bg-card">
       <table className="w-full text-sm">
@@ -142,6 +145,7 @@ function DealTable({ deals, cols, stall, taskStats }: { deals: Deal[]; cols: Col
         <tbody>
           {deals.map((d) => {
             const { b, r, gap, days } = metrics(d);
+            const { earliest, missing } = nextDealAction(d.id, tasks, requests);
             const cell: Record<ColumnKey, ReactNode> = {
               type: d.propertyType,
               stage: <StageBadge stage={d.stage} />,
@@ -167,6 +171,10 @@ function DealTable({ deals, cols, stall, taskStats }: { deals: Deal[]; cols: Col
                 <td className="px-4 py-3">
                   <Link to="/deals/$dealId" params={{ dealId: d.id }} className="font-medium hover:underline">{d.name}</Link>
                   <div className="text-xs text-muted-foreground">{d.market} · {d.assumptions.units} units{!d.canEdit && " · shared with you"}</div>
+                  {isOpen(d.stage) && (earliest || missing) && <div className="mt-1 text-xs">
+                    {earliest && <Link to="/deals/$dealId" params={{ dealId: d.id }} search={{ step: "schedule" }} className={`${earliest.due_date && earliest.due_date < new Date().toLocaleDateString("en-CA") ? "text-destructive" : "text-muted-foreground"} hover:underline`}>{earliest.title} · {earliest.due_date}</Link>}
+                    {missing && <Link to="/deals/$dealId" params={{ dealId: d.id }} search={{ step: "vault" }} className="ml-2 text-muted-foreground hover:underline">Awaiting: {missing.label}</Link>}
+                  </div>}
                 </td>
                 {shown.map((c) => <td key={c.key} className={`px-4 py-3 ${["type", "stage"].includes(c.key) ? "" : "num text-right"}`}>{cell[c.key]}</td>)}
               </tr>
@@ -178,7 +186,7 @@ function DealTable({ deals, cols, stall, taskStats }: { deals: Deal[]; cols: Col
   );
 }
 
-function Board({ deals, stages, stall, taskStats, onMove }: { deals: Deal[]; stages: string[]; stall: number; taskStats: Record<string, { open: number; overdue: number }>; onMove: (id: string, stage: string) => void }) {
+function Board({ deals, stages, stall, taskStats, tasks, requests, onMove }: { deals: Deal[]; stages: string[]; stall: number; taskStats: Record<string, { open: number; overdue: number }>; tasks: ActionTask[]; requests: ActionRequest[]; onMove: (id: string, stage: string) => void }) {
   const [over, setOver] = useState<string | null>(null);
   return (
     <div className="flex gap-3 overflow-x-auto pb-4">
@@ -194,6 +202,7 @@ function Board({ deals, stages, stall, taskStats, onMove }: { deals: Deal[]; sta
             <div className="flex min-h-24 flex-col gap-2">
               {list.map((d) => {
                 const { r, days } = metrics(d);
+                const { earliest, missing } = nextDealAction(d.id, tasks, requests);
                 return (
                   <div key={d.id} draggable={d.canEdit} onDragStart={(e) => e.dataTransfer.setData("text/plain", d.id)}
                     className="cursor-grab rounded border bg-card p-3 text-sm shadow-sm active:cursor-grabbing">
@@ -205,6 +214,8 @@ function Board({ deals, stages, stall, taskStats, onMove }: { deals: Deal[]; sta
                     </div>
                     {isOpen(s) && <div className={`mt-1 text-xs ${days >= stall ? "text-warning" : "text-muted-foreground"}`}>{days} days in stage{days >= stall ? " · stalled" : ""}</div>}
                     {(() => { const od = taskStats[d.id]?.overdue ?? 0; return od ? <div className="mt-0.5 text-xs text-destructive">{od} overdue task{od > 1 ? "s" : ""}</div> : null; })()}
+                    {isOpen(s) && earliest && <Link to="/deals/$dealId" params={{ dealId: d.id }} search={{ step: "schedule" }} className="mt-1 block truncate text-xs text-muted-foreground hover:underline">Next: {earliest.title} · {earliest.due_date}</Link>}
+                    {isOpen(s) && missing && <Link to="/deals/$dealId" params={{ dealId: d.id }} search={{ step: "vault" }} className="block truncate text-xs text-muted-foreground hover:underline">Awaiting: {missing.label}</Link>}
                   </div>
                 );
               })}

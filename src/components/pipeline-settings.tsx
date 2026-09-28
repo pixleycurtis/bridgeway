@@ -54,7 +54,7 @@ export function PipelineSettings() {
   return (
     <section>
       <h2 className="font-display text-2xl">Pipeline & defaults</h2>
-      <p className="mt-1 text-sm text-muted-foreground">Your stages, property types, and the starting numbers for new deals.{!isAdmin && " Only admins can change these."}</p>
+      {!isAdmin && <p className="mt-1 text-sm text-muted-foreground">Only admins can change these.</p>}
       <div className="mt-5 space-y-6 rounded-md border bg-card p-5">
         <div className="grid gap-6 md:grid-cols-2">
           <div>

@@ -7,6 +7,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { useDeals, type Deal } from "@/lib/deals-store";
 import { analyze, pct, sumBy, usd } from "@/lib/finance";
+import { useTaskStats } from "@/lib/deal-tables";
 import { useWorkspace } from "@/lib/workspace";
 import { PIPELINE_COLUMNS, allStages, daysInStage, isOpen, type ColumnKey } from "@/lib/firm-settings";
 
@@ -102,7 +103,7 @@ function Pipeline() {
       </div>
 
       <div className="px-6 pb-12 pt-4 md:px-10">
-        {view === "table" ? <DealTable deals={inTab} cols={cols} stall={settings.stallDays} /> : <Board deals={filtered} stages={stages} stall={settings.stallDays} onMove={(id, stage) => update(id, { stage })} />}
+        {view === "table" ? <DealTable deals={inTab} cols={cols} stall={settings.stallDays} taskStats={taskStats} /> : <Board deals={filtered} stages={stages} stall={settings.stallDays} taskStats={taskStats} onMove={(id, stage) => update(id, { stage })} />}
       </div>
     </div>
   );

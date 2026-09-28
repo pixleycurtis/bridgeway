@@ -31,7 +31,7 @@ export function DealVault({ deal }: { deal: Deal }) {
   const { rows, add, update, remove } = useDealRows<DdItem>("deal_dd_items", deal.id, "created_at");
   const [files, setFiles] = useState<FileRow[]>([]);
   const [label, setLabel] = useState("");
-  const [category, setCategory] = useState(CATEGORIES[0]);
+  const [category, setCategory] = useState<string>(CATEGORIES[0] ?? "Financial");
 
   useEffect(() => {
     (async () => {

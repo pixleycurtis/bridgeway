@@ -11,7 +11,7 @@ export function LenderQuotes({ deal }: { deal: Deal }) {
   const { rows, add, update, remove } = useDealRows<Quote>("deal_lender_quotes", deal.id);
   const r = analyze(deal.lines, deal.assumptions, deal.adjustments);
   const [f, setF] = useState({ lender: "", program: "", loanAmount: "", rate: "", amortYears: "", ioYears: "", dscrTest: "", feeBps: "", recourse: "Non-recourse" });
-  const [status, setStatus] = useState(STATUSES[0]);
+  const [status, setStatus] = useState<string>(STATUSES[0] ?? "quoting");
   const live = rows.filter((q) => q.status !== "dropped" && q.status !== "signed");
   const best = useMemo(() => {
     const withRate = live.filter((q) => q.rate != null);

@@ -20,7 +20,7 @@ export function DealSchedule({ deal }: { deal: Deal }) {
   const { firm } = useWorkspace();
   const { rows, add, update, remove } = useDealRows<Task>("deal_tasks", deal.id, "due_date");
   const [members, setMembers] = useState<Member[]>([]);
-  const [dateTitle, setDateTitle] = useState(KEY_DATES[0]);
+  const [dateTitle, setDateTitle] = useState<string>(KEY_DATES[0] ?? KEY_DATES[0]);
   const [dateVal, setDateVal] = useState("");
   const [taskTitle, setTaskTitle] = useState("");
   const [taskDue, setTaskDue] = useState("");

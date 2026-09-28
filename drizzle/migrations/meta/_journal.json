@@ -36,6 +36,13 @@
       "when": 1790629443361,
       "tag": "0004_deal_types_stages_firm_settings",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1790633174685,
+      "tag": "0005_shared_deal_file_metadata_read",
+      "breakpoints": true
     }
   ]
 }

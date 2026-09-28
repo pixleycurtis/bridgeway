@@ -1,4 +1,4 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
 import { Stat } from "@/components/app-shell";
@@ -46,15 +46,16 @@ function DealPage() {
   const { dealId } = Route.useParams();
   const { deals, update } = useDeals();
   const deal = deals.find((d) => d.id === dealId);
-  const [step, setStep] = useState<StepId | null>(null);
   const { step: requestedStep } = Route.useSearch();
+  const navigate = useNavigate();
+  const setStep = (next: StepId) => void navigate({ to: "/deals/$dealId", params: { dealId }, search: { step: next } });
   const { loading } = useDeals();
   const { settings } = useWorkspace();
   const { tasks, requests, loading: actionsLoading, error: actionsError, reload: reloadActions } = useDealActions(deal ? [deal] : []);
   if (!deal) return loading ? <div className="p-10 text-sm text-muted-foreground">Loading…</div> : <div className="p-10">Deal not found. <Link to="/" className="underline">Back to pipeline</Link></div>;
   const r = analyze(deal.lines, deal.assumptions, deal.adjustments);
   const set = (p: Partial<Deal>) => { if (deal.canEdit) update(deal.id, p); };
-  const current: StepId = step ?? (STEPS.find((s) => s.id === requestedStep)?.id ?? (deal.canEdit ? "schedule" : "documents"));
+  const current: StepId = STEPS.find((s) => s.id === requestedStep)?.id ?? (deal.canEdit ? "schedule" : "documents");
   const nextStep = STEPS[STEPS.findIndex((s) => s.id === current) + 1];
   const { earliest, missing } = nextDealAction(deal.id, tasks, requests);
   const today = new Date().toLocaleDateString("en-CA");

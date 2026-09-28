@@ -9,7 +9,7 @@ import { analyze, pct, usd } from "@/lib/finance";
 
 /** Quarterly actual results for one closed deal, against the underwrite. */
 export function ActualsEditor({ deal }: { deal: Deal }) {
-  const { rows, add, update, remove, reload } = useDealRows<Actual>("deal_actuals", deal.id, "period");
+  const { rows, remove, reload } = useDealRows<Actual>("deal_actuals", deal.id, "period");
   const [period, setPeriod] = useState(suggestPeriod());
   const [revenue, setRevenue] = useState("");
   const [otherIncome, setOtherIncome] = useState("");

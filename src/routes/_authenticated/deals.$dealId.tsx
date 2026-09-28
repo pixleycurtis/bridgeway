@@ -8,7 +8,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { STAGES, useDeals, type Deal, type Stage } from "@/lib/deals-store";
 import { analyze, pct, solvePrice, sumBy, usd, type Assumptions, type LineItem } from "@/lib/finance";
 
-export const Route = createFileRoute("/deals/$dealId")({
+export const Route = createFileRoute("/_authenticated/deals/$dealId")({
   head: () => ({
     meta: [
       { title: "Deal workspace — Keystone" },

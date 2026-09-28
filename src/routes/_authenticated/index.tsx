@@ -7,7 +7,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { blankDeal, useDeals } from "@/lib/deals-store";
 import { analyze, pct, sumBy, usd } from "@/lib/finance";
 
-export const Route = createFileRoute("/")({
+export const Route = createFileRoute("/_authenticated/")({
   head: () => ({
     meta: [
       { title: "Pipeline — Keystone" },

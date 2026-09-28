@@ -3,7 +3,7 @@ import { PageHeader, Stat } from "@/components/app-shell";
 import { STAGES, useDeals } from "@/lib/deals-store";
 import { pct, sumBy, usd } from "@/lib/finance";
 
-export const Route = createFileRoute("/insights")({
+export const Route = createFileRoute("/_authenticated/insights")({
   head: () => ({
     meta: [
       { title: "Insights — Keystone" },

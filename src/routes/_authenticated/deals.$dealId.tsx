@@ -17,7 +17,7 @@ import { PASS_REASONS, allStages } from "@/lib/firm-settings";
 import { nextDealAction, useDealActions } from "@/lib/deal-actions";
 
 export const Route = createFileRoute("/_authenticated/deals/$dealId")({
-  validateSearch: (search: Record<string, unknown>) => ({ step: typeof search.step === "string" ? search.step : undefined }),
+  validateSearch: (search: Record<string, unknown>): { step?: string } => typeof search["step"] === "string" ? { step: search["step"] } : {},
   head: () => ({
     meta: [
       { title: "Deal workspace — Keystone" },

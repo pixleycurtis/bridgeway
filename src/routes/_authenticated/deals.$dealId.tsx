@@ -14,27 +14,31 @@ import { DealVault } from "@/components/deal-vault";
 import { LenderQuotes } from "@/components/lender-quotes";
 import { useWorkspace } from "@/lib/workspace";
 import { PASS_REASONS, allStages } from "@/lib/firm-settings";
+import { nextDealAction, useDealActions } from "@/lib/deal-actions";
 
 export const Route = createFileRoute("/_authenticated/deals/$dealId")({
+  validateSearch: (search: Record<string, unknown>) => ({ step: typeof search.step === "string" ? search.step : undefined }),
   head: () => ({
     meta: [
       { title: "Deal workspace — Keystone" },
       { name: "description", content: "Reconcile the broker OM, underwrite, and build a retrade from diligence findings." },
       { property: "og:title", content: "Deal workspace — Keystone" },
       { property: "og:description", content: "Reconcile the broker OM, underwrite, and build a retrade from diligence findings." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
     ],
   }),
   component: DealPage,
 });
 
 const STEPS = [
-  { id: "schedule", n: "01", label: "Schedule", hint: "Key dates & tasks" },
-  { id: "vault", n: "02", label: "Data room", hint: "DD tracker & files" },
-  { id: "reconcile", n: "03", label: "Reconcile", hint: "Broker OM vs. T-12" },
-  { id: "underwrite", n: "04", label: "Underwrite", hint: "Assumptions & returns" },
-  { id: "financing", n: "05", label: "Financing", hint: "Lender quotes" },
-  { id: "retrade", n: "06", label: "Diligence & retrade", hint: "Findings to price" },
-  { id: "documents", n: "07", label: "Documents", hint: "Branded deliverables" },
+  { id: "schedule", n: "01", label: "Schedule" },
+  { id: "vault", n: "02", label: "Data room" },
+  { id: "reconcile", n: "03", label: "Reconcile" },
+  { id: "underwrite", n: "04", label: "Underwrite" },
+  { id: "financing", n: "05", label: "Financing" },
+  { id: "retrade", n: "06", label: "Diligence & retrade" },
+  { id: "documents", n: "07", label: "Documents" },
 ] as const;
 type StepId = (typeof STEPS)[number]["id"];
 
@@ -43,13 +47,17 @@ function DealPage() {
   const { deals, update } = useDeals();
   const deal = deals.find((d) => d.id === dealId);
   const [step, setStep] = useState<StepId | null>(null);
+  const { step: requestedStep } = Route.useSearch();
   const { loading } = useDeals();
   const { settings } = useWorkspace();
+  const { tasks, requests, loading: actionsLoading, error: actionsError, reload: reloadActions } = useDealActions(deal ? [deal] : []);
   if (!deal) return loading ? <div className="p-10 text-sm text-muted-foreground">Loading…</div> : <div className="p-10">Deal not found. <Link to="/" className="underline">Back to pipeline</Link></div>;
   const r = analyze(deal.lines, deal.assumptions, deal.adjustments);
   const set = (p: Partial<Deal>) => { if (deal.canEdit) update(deal.id, p); };
-  const current: StepId = step ?? (deal.canEdit ? "schedule" : "documents");
+  const current: StepId = step ?? (STEPS.find((s) => s.id === requestedStep)?.id ?? (deal.canEdit ? "schedule" : "documents"));
   const nextStep = STEPS[STEPS.findIndex((s) => s.id === current) + 1];
+  const { earliest, missing } = nextDealAction(deal.id, tasks, requests);
+  const today = new Date().toLocaleDateString("en-CA");
 
   return (
     <div>
@@ -89,13 +97,18 @@ function DealPage() {
           <Stat label="DSCR" value={r.dscr.toFixed(2) + "x"} tone={r.dscr < 1.25 ? "neg" : undefined} />
           <Stat label="Levered IRR" value={pct(r.irr)} tone={r.irr < deal.targetIrr ? "warn" : "pos"} />
         </div>
+        {!actionsLoading && (earliest || missing || actionsError) && <div className="mt-5 flex flex-wrap items-center gap-x-5 gap-y-1 border-t pt-3 text-xs">
+          {actionsError ? <span className="text-destructive">Priorities unavailable <Button variant="link" size="sm" onClick={() => void reloadActions()}>Retry</Button></span> : <>
+            {earliest && <Button variant="link" size="sm" className={`h-auto p-0 ${earliest.due_date && earliest.due_date < today ? "text-destructive" : "text-foreground"}`} onClick={() => setStep("schedule")}>{earliest.due_date && earliest.due_date < today ? "Overdue" : "Next date"}: {earliest.title} · {earliest.due_date} →</Button>}
+            {missing && <Button variant="link" size="sm" className="h-auto p-0 text-muted-foreground" onClick={() => setStep("vault")}>Awaiting: {missing.label} →</Button>}
+          </>}
+        </div>}
         <nav className="mt-6 flex gap-1 overflow-x-auto">
           {STEPS.map((s) => (
-            <Button key={s.id} variant="ghost" onClick={() => setStep(s.id)}
+            <Button key={s.id} variant="ghost" aria-current={current === s.id ? "step" : undefined} onClick={() => setStep(s.id)}
               className={`h-auto shrink-0 rounded-none -mb-px border-b-2 px-4 py-3 text-left transition-colors ${current === s.id ? "border-primary text-foreground" : "border-transparent text-muted-foreground hover:text-foreground"}`}>
               <span className="num mr-2 text-xs">{s.n}</span>
               <span className="text-sm font-medium">{s.label}</span>
-              <span className="ml-2 hidden text-xs text-muted-foreground lg:inline">{s.hint}</span>
             </Button>
           ))}
         </nav>

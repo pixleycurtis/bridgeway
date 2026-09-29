@@ -1,7 +1,7 @@
 import type { Json } from "@/integrations/supabase/types";
 
 export const TERMINAL = ["Closed", "Passed"] as const;
-export const DEFAULT_STAGES = ["Screening", "Underwriting", "LOI", "Under contract"];
+export const DEFAULT_STAGES = ["Screening", "Underwriting", "LOI", "Under contract", "Closing"];
 export const DEFAULT_TYPES = ["Multifamily", "Retail", "Office", "Industrial", "Mixed-use", "Self-storage"];
 export const PASS_REASONS = ["Price too high", "Seller wouldn't retrade", "Failed diligence", "Financing", "Lost to another buyer", "Market / location", "Returns below target", "Other"];
 
@@ -41,12 +41,19 @@ export const DEFAULT_SETTINGS: FirmSettings = {
   defaults: { ltv: 0.7, rate: 0.0675, exitCap: 0.065, holdYears: 5 },
 };
 
+/** Firms configured before "Closing" existed get it inserted after "Under contract". */
+function ensureClosing(stages: string[]) {
+  if (stages.includes("Closing") || !stages.includes("Under contract")) return stages;
+  const i = stages.indexOf("Under contract") + 1;
+  return [...stages.slice(0, i), "Closing", ...stages.slice(i)];
+}
+
 export function readSettings(raw: Json | null | undefined): FirmSettings {
   const s = (raw && typeof raw === "object" && !Array.isArray(raw) ? raw : {}) as Partial<FirmSettings>;
   return {
     ...DEFAULT_SETTINGS,
     ...s,
-    stages: s.stages?.length ? s.stages.filter((x) => !TERMINAL.includes(x as never)) : DEFAULT_STAGES,
+    stages: ensureClosing(s.stages?.length ? s.stages.filter((x) => !TERMINAL.includes(x as never)) : DEFAULT_STAGES),
     propertyTypes: s.propertyTypes?.length ? s.propertyTypes : DEFAULT_TYPES,
     columns: s.columns?.length ? s.columns : DEFAULT_SETTINGS.columns,
     defaults: { ...DEFAULT_SETTINGS.defaults, ...(s.defaults ?? {}) },

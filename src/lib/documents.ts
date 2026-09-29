@@ -4,7 +4,7 @@ import type { Firm } from "./workspace";
 
 export type TableKey = "summary" | "income" | "returns" | "cashflow" | "sensitivity" | "debt" | "findings";
 export interface Section { id: string; title: string; body: string; table?: TableKey | null }
-export type DocKind = "memo" | "loi" | "lender" | "retrade" | "ddlist" | "ic";
+export type DocKind = "memo" | "loi" | "lender" | "retrade" | "ddlist" | "ic" | "objection";
 
 export const DOC_KINDS: { kind: DocKind; title: string; audience: string; blurb: string }[] = [
   { kind: "memo", title: "Investment summary", audience: "Partners & investors", blurb: "The deal on a page: thesis, numbers, returns, risks." },
@@ -13,6 +13,7 @@ export const DOC_KINDS: { kind: DocKind; title: string; audience: string; blurb:
   { kind: "lender", title: "Lender package", audience: "Lender", blurb: "Loan request, operating history, debt coverage, cash flows." },
   { kind: "ddlist", title: "Due diligence request list", audience: "Seller", blurb: "Everything you need from the seller during diligence." },
   { kind: "retrade", title: "Retrade letter", audience: "Seller", blurb: "Findings from diligence and the price adjustment you're asking for." },
+  { kind: "objection", title: "Commitment objection letter", audience: "Seller & title company", blurb: "Your objections to Schedule B-II exceptions and the cures you require." },
 ];
 
 const sid = () => Math.random().toString(36).slice(2, 9);
@@ -34,7 +35,7 @@ export function dealFacts(d: Deal) {
   ].join("\n");
 }
 
-export function defaultSections(kind: DocKind, d: Deal, firm: Firm | null): Section[] {
+export function defaultSections(kind: DocKind, d: Deal, firm: Firm | null, titleItems: { item: string; status: string }[] = []): Section[] {
   const r = analyze(d.lines, d.assumptions, d.adjustments);
   const a = d.assumptions;
   const t = sumBy(d.lines, "t12");
@@ -91,6 +92,16 @@ export function defaultSections(kind: DocKind, d: Deal, firm: Firm | null): Sect
         s("Impact", `The recurring items reduce NOI by ${usd(annual)} annually, which at a ${pct(r.capRate, 2)} cap rate represents ${usd(annual / (r.capRate || 1))} of value. Combined with ${usd(oneTime)} of immediate capital needs, we are requesting a purchase price adjustment of ${k(cut)}, to a revised price of ${k(hold)}.`),
         s("Alternative", `Alternatively, we would accept a closing credit of ${usd(oneTime)} for the capital items together with a price adjustment of ${k(Math.max(0, cut - oneTime))}.\n\nWe remain committed to closing on the current timeline and look forward to your response.\n\nSincerely,\n${firm?.contact_name ?? ""}\n${buyer}`),
       ];
+    case "objection": {
+      const objected = titleItems.filter((t) => t.status === "objected");
+      const candidates = objected.length ? objected : titleItems.filter((t) => t.status === "open");
+      const list = candidates.map((t) => `• ${t.item}`).join("\n");
+      return [
+        s("Letter", `${today}\n\nRe: ${d.name}${where ? `, ${where}` : ""} — Title commitment objections\n\nWe have reviewed the commitment for title insurance issued in connection with the above transaction. We object to the following matters shown in Schedule B-II and require that they be removed from the policy or affirmatively insured over:`),
+        s("Objections", list || "• (Mark the exceptions you object to in the Title & closing tracker, then rebuild this letter.)"),
+        s("Response requested", `Please provide revised commitment pages deleting the objected matters or, where removal is not practicable, the pricing and endorsement options needed for us to evaluate acceptance. Please also confirm the Schedule B-I requirements you anticipate, including payoff statements and entity documentation, so we can coordinate the closing.\n\nSincerely,\n${firm?.contact_name ?? ""}\n${buyer}`),
+      ];
+    }
   }
 }
 

@@ -11,6 +11,7 @@ import { DocumentsStudio } from "@/components/documents-studio";
 import { ShareDialog, UploadPanel } from "@/components/deal-extras";
 import { DealSchedule } from "@/components/deal-schedule";
 import { DealVault } from "@/components/deal-vault";
+import { DealClosing } from "@/components/deal-closing";
 import { LenderQuotes } from "@/components/lender-quotes";
 import { useWorkspace } from "@/lib/workspace";
 import { PASS_REASONS, allStages } from "@/lib/firm-settings";
@@ -38,7 +39,8 @@ const STEPS = [
   { id: "underwrite", n: "04", label: "Underwrite" },
   { id: "financing", n: "05", label: "Financing" },
   { id: "retrade", n: "06", label: "Diligence & retrade" },
-  { id: "documents", n: "07", label: "Documents" },
+  { id: "closing", n: "07", label: "Title & closing" },
+  { id: "documents", n: "08", label: "Documents" },
 ] as const;
 type StepId = (typeof STEPS)[number]["id"];
 
@@ -115,14 +117,14 @@ function DealPage() {
         </nav>
       </div>
       <div className="px-6 py-8 md:px-10">
-        {current === "documents" ? <DocumentsStudio deal={deal} /> : current === "schedule" ? <DealSchedule deal={deal} /> : current === "vault" ? <DealVault deal={deal} /> : current === "financing" ? <LenderQuotes deal={deal} /> : (
+        {current === "documents" ? <DocumentsStudio deal={deal} /> : current === "schedule" ? <DealSchedule deal={deal} /> : current === "vault" ? <DealVault deal={deal} /> : current === "financing" ? <LenderQuotes deal={deal} /> : current === "closing" ? <DealClosing deal={deal} /> : (
           <fieldset disabled={!deal.canEdit} className="min-w-0">
             {current === "reconcile" && <Reconcile deal={deal} set={set} onNext={() => setStep("underwrite")} />}
             {current === "underwrite" && <Underwrite deal={deal} set={set} onNext={() => setStep("financing")} />}
-            {current === "retrade" && <Retrade deal={deal} set={set} onNext={() => setStep("documents")} />}
+            {current === "retrade" && <Retrade deal={deal} set={set} onNext={() => setStep("closing")} />}
           </fieldset>
         )}
-        {nextStep && (current === "schedule" || current === "vault" || current === "financing") && (
+        {nextStep && (current === "schedule" || current === "vault" || current === "financing" || current === "closing") && (
           <div className="mt-6 flex justify-end"><Button onClick={() => setStep(nextStep.id)}>Continue to {nextStep.label.toLowerCase()} →</Button></div>
         )}
       </div>

@@ -49,6 +49,30 @@ Reply with only JSON: {"values":{"gpr":0,...all keys},"units":number|null,"price
     return { values, units: out.units ?? null, price: out.price ?? null, propertyName: out.propertyName ?? null, notes: out.notes ?? "" };
   });
 
+export type CommitmentExtract = {
+  proposedInsured?: string | null;
+  policyAmount?: number | null;
+  requirements?: { item: string }[];
+  exceptions?: { item: string }[];
+  dates?: { title: string; date: string | null }[];
+  notes?: string;
+};
+
+export const extractCommitment = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d) => fileInput.parse(d))
+  .handler(async ({ data }) => {
+    const prompt = `You are a real estate closing analyst reviewing a title insurance commitment (ALTA form) for a commercial or multifamily acquisition.
+From the attached document extract:
+- Schedule A: the proposed insured(s) and the policy amount in USD (number, null if not stated)
+- Schedule B-I requirements: each requirement as one short item
+- Schedule B-II exceptions: each exception as one short item (liens, easements, covenants, leases, taxes)
+- Any stated deadlines or dates (title objection deadline, closing date, survey date) as {"title":"...","date":"YYYY-MM-DD"}; use null for an unclear date.
+Reply with only JSON: {"proposedInsured":string|null,"policyAmount":number|null,"requirements":[{"item":"..."}],"exceptions":[{"item":"..."}],"dates":[{"title":"...","date":"YYYY-MM-DD"|null}],"notes":"one or two sentences on anything uncertain"}`;
+    const text = await runAI(fileMessage(data, prompt));
+    return parseJson<CommitmentExtract>(text);
+  });
+
 export const writeSection = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d) => z.object({

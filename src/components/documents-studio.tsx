@@ -26,7 +26,7 @@ export function DocumentsStudio({ deal }: { deal: Deal }) {
       if (f) { setFirm(f); setLogo(await signedLogo(f.logo_path)); }
       const { data } = await supabase.from("deal_documents").select("kind, sections").eq("deal_id", deal.id);
       setSaved(Object.fromEntries((data ?? []).map((d) => [d.kind, d.sections as unknown as Section[]])));
-      const { data: ti } = await supabase.from("deal_title_items").select("item, status").eq("deal_id", deal.id);
+      const { data: ti } = await supabase.from("deal_title_items").select("item, status").eq("deal_id", deal.id).eq("section", "commitment");
       setTitleItems((ti ?? []) as { item: string; status: string }[]);
     })();
   }, [deal.id, deal.firmId]);

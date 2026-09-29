@@ -43,6 +43,13 @@
       "when": 1790633174685,
       "tag": "0005_shared_deal_file_metadata_read",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1790710342877,
+      "tag": "0006_deal_title_items",
+      "breakpoints": true
     }
   ]
 }

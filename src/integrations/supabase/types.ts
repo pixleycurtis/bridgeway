@@ -351,6 +351,63 @@ export type Database = {
           },
         ]
       }
+      deal_title_items: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          deal_id: string
+          detail: string | null
+          due_date: string | null
+          file_path: string | null
+          firm_id: string
+          id: string
+          item: string
+          section: string
+          status: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          deal_id: string
+          detail?: string | null
+          due_date?: string | null
+          file_path?: string | null
+          firm_id: string
+          id?: string
+          item: string
+          section?: string
+          status?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          deal_id?: string
+          detail?: string | null
+          due_date?: string | null
+          file_path?: string | null
+          firm_id?: string
+          id?: string
+          item?: string
+          section?: string
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "deal_title_items_deal_id_fkey"
+            columns: ["deal_id"]
+            isOneToOne: false
+            referencedRelation: "deals"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "deal_title_items_firm_id_fkey"
+            columns: ["firm_id"]
+            isOneToOne: false
+            referencedRelation: "firms"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       deals: {
         Row: {
           address: string

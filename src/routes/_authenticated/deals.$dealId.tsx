@@ -13,6 +13,7 @@ import { DealSchedule } from "@/components/deal-schedule";
 import { DealVault } from "@/components/deal-vault";
 import { DealClosing } from "@/components/deal-closing";
 import { LinkedFindings } from "@/components/linked-findings";
+import { MessagesDialog } from "@/components/deal-room";
 import { LenderQuotes } from "@/components/lender-quotes";
 import { useWorkspace } from "@/lib/workspace";
 import { PASS_REASONS, allStages } from "@/lib/firm-settings";
@@ -74,6 +75,7 @@ function DealPage() {
           </div>
           {deal.canEdit ? (
             <div className="flex gap-2">
+              <MessagesDialog deal={deal} />
               <ShareDialog deal={deal} />
               <select value={deal.propertyType} onChange={(e) => set({ propertyType: e.target.value })} className="rounded-md border bg-card px-3 py-2 text-sm" aria-label="Property type">
                 {[...new Set([...settings.propertyTypes, deal.propertyType])].map((t) => <option key={t}>{t}</option>)}

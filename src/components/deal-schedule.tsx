@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useDealRows, isOverdue, type Task } from "@/lib/deal-tables";
 import type { Deal } from "@/lib/deals-store";
+import { AssignRole, ItemThread, SharedWith } from "./deal-room";
 import { useWorkspace, type Member } from "@/lib/workspace";
 
 const KEY_DATES = [
@@ -18,6 +19,7 @@ const KEY_DATES = [
 ];
 
 export function DealSchedule({ deal }: { deal: Deal }) {
+  const [thread, setThread] = useState<string | null>(null);
   const { rows, loading, error, reload, add, update, remove } = useDealRows<Task>("deal_tasks", deal.id, "due_date");
   const [members, setMembers] = useState<Member[]>([]);
   const [dateTitle, setDateTitle] = useState<string>("Due diligence expiration");
@@ -105,7 +107,7 @@ export function DealSchedule({ deal }: { deal: Deal }) {
           {loading && <li className="p-4 text-sm text-muted-foreground">Loading tasks…</li>}
           {!loading && !error && tasks.length === 0 && <li className="p-4 text-sm text-muted-foreground">{deal.canEdit ? "Assign the next piece of work above." : "No tasks assigned."}</li>}
           {tasks.map((t) => (
-            <li key={t.id} className="flex items-center justify-between gap-3 px-4 py-3 text-sm">
+            <li key={t.id} className="px-4 py-3 text-sm"><div className="flex items-center justify-between gap-3">
               <label className="flex min-w-0 items-center gap-3">
                 {deal.canEdit && <input type="checkbox" checked={t.done} onChange={(e) => update(t.id, { done: e.target.checked })} className="h-4 w-4" />}
                 <span className={t.done ? "text-muted-foreground line-through" : ""}>
@@ -117,8 +119,12 @@ export function DealSchedule({ deal }: { deal: Deal }) {
                 <span className={`num text-xs ${isOverdue(t) ? "text-destructive" : "text-muted-foreground"}`}>
                   {t.dueDate ? (t.done ? t.dueDate : `${isOverdue(t) ? "Overdue · " : "Due "}${t.dueDate}`) : "No due date"}
                 </span>
+                {deal.canEdit && <AssignRole value={t.assignedRole} shared={t.sharedWith ?? []} onChange={(p) => update(t.id, p)} />}
+                {deal.canEdit && <SharedWith value={t.sharedWith ?? []} onChange={(v) => update(t.id, { shared_with: v })} />}
+                <button type="button" className="text-xs text-muted-foreground hover:text-foreground" onClick={() => setThread(thread === t.id ? null : t.id)}>Discuss</button>
                 {deal.canEdit && <Button variant="ghost" size="sm" className="text-xs text-muted-foreground hover:text-destructive" onClick={() => remove(t.id)}>Remove</Button>}
-              </div>
+              </div></div>
+              {thread === t.id && <ItemThread dealId={deal.id} itemType="task" itemId={t.id} roles={t.sharedWith ?? []} />}
             </li>
           ))}
         </ul>

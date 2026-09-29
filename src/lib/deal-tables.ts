@@ -13,6 +13,8 @@ export interface Task {
   dueDate: string | null;
   assignee: string | null;
   done: boolean;
+  assignedRole: string | null;
+  sharedWith: string[];
 }
 
 /** An item on the diligence request checklist. */
@@ -25,6 +27,7 @@ export interface DdItem {
   filePath: string | null;
   sharedWith: string[];
   impact: Impact | null;
+  assignedRole: string | null;
 }
 
 /** A title commitment item or closing checklist row. */
@@ -37,6 +40,7 @@ export interface TitleItem {
   filePath: string | null;
   sharedWith: string[];
   impact: Impact | null;
+  assignedRole: string | null;
 }
 
 /** Dollar effect of a finding: annual NOI hit, one-time capital, or a straight price credit. */

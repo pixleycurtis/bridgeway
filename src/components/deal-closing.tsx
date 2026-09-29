@@ -9,7 +9,7 @@ import { useDealRows, type Task, type TitleItem } from "@/lib/deal-tables";
 import { useWorkspace } from "@/lib/workspace";
 import { extractCommitment, type CommitmentExtract } from "@/lib/ai.functions";
 import { getSharedFileUrl } from "@/lib/deal-files.functions";
-import { SharedWith, ImpactInput } from "./deal-room";
+import { SharedWith, ImpactInput, AssignRole, ItemThread } from "./deal-room";
 import { readForAI } from "@/lib/files";
 import { usd } from "@/lib/finance";
 import type { Deal } from "@/lib/deals-store";
@@ -56,6 +56,7 @@ export function DealClosing({ deal }: { deal: Deal }) {
   const [label, setLabel] = useState("");
   const [due, setDue] = useState("");
   const [busy, setBusy] = useState(false);
+  const [thread, setThread] = useState<string | null>(null);
   const [found, setFound] = useState<CommitmentExtract | null>(null);
   const [picked, setPicked] = useState<Set<string>>(new Set());
   const readCommitment = useServerFn(extractCommitment);
@@ -189,9 +190,12 @@ export function DealClosing({ deal }: { deal: Deal }) {
                     </label>
                   )}
                   {deal.canEdit && section === "commitment" && <ImpactInput value={it.impact} onChange={(v) => update(it.id, { impact: v })} />}
+                  {deal.canEdit && <AssignRole value={it.assignedRole} shared={it.sharedWith ?? []} onChange={(p) => update(it.id, p)} />}
                   {deal.canEdit && <SharedWith value={it.sharedWith ?? []} onChange={(v) => update(it.id, { shared_with: v })} />}
+                  <button type="button" className="hover:text-foreground" onClick={() => setThread(thread === it.id ? null : it.id)}>Discuss</button>
                   {deal.canEdit && <button className="hover:text-destructive" onClick={() => void remove(it.id)}>Remove</button>}
                 </div>
+                {thread === it.id && <ItemThread dealId={deal.id} itemType="title" itemId={it.id} roles={it.sharedWith ?? []} />}
               </li>
             ))}
           </ul>

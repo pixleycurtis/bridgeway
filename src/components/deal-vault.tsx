@@ -7,7 +7,7 @@ import { useDealRows, type DdItem } from "@/lib/deal-tables";
 import type { Deal } from "@/lib/deals-store";
 import { useServerFn } from "@tanstack/react-start";
 import { getSharedFileUrl } from "@/lib/deal-files.functions";
-import { SharedWith, ImpactInput } from "./deal-room";
+import { SharedWith, ImpactInput, AssignRole, ItemThread } from "./deal-room";
 
 const CATEGORIES = ["Financial", "Physical", "Legal & other", "Title"];
 const TEMPLATE: { label: string; category: string }[] = [
@@ -41,6 +41,7 @@ export function DealVault({ deal }: { deal: Deal }) {
   const [filesLoading, setFilesLoading] = useState(true);
   const [label, setLabel] = useState("");
   const [category, setCategory] = useState<string>(CATEGORIES[0] ?? "Financial");
+  const [thread, setThread] = useState<string | null>(null);
   const [linkingItem, setLinkingItem] = useState<string | null>(null);
   const [selectedFile, setSelectedFile] = useState("");
 
@@ -125,12 +126,14 @@ export function DealVault({ deal }: { deal: Deal }) {
                 <div className="text-[11px] uppercase tracking-widest text-muted-foreground">{c}</div>
                 <ul className="mt-2 divide-y rounded-md border bg-card">
                   {items.map((it) => (
-                    <li key={it.id} className="flex items-center justify-between gap-3 px-4 py-2.5 text-sm">
+                    <li key={it.id} className="px-4 py-2.5 text-sm"><div className="flex items-center justify-between gap-3">
                       <label className="flex min-w-0 items-center gap-3">
                         {deal.canEdit && <input type="checkbox" checked={it.received} onChange={(e) => update(it.id, { received: e.target.checked, ...(e.target.checked ? {} : { file_path: null }) })} className="h-4 w-4" />}
                         <span className={it.received ? "text-muted-foreground line-through" : ""}>{it.label}</span>
                       </label>
                       <div className="flex shrink-0 items-center gap-2">
+                        {deal.canEdit && <AssignRole value={it.assignedRole} shared={it.sharedWith ?? []} onChange={(p) => update(it.id, p)} />}
+                        <button type="button" className="text-xs text-muted-foreground hover:text-foreground" onClick={() => setThread(thread === it.id ? null : it.id)}>Discuss</button>
                         {deal.canEdit && <ImpactInput value={it.impact} onChange={(v) => update(it.id, { impact: v })} />}
                         {deal.canEdit && <SharedWith value={it.sharedWith ?? []} onChange={(v) => update(it.id, { shared_with: v })} />}
                         {it.filePath && <Button variant="link" size="sm" className="h-auto p-0 text-xs" onClick={() => void openFile(it.filePath ?? "")}>Open file</Button>}
@@ -150,7 +153,8 @@ export function DealVault({ deal }: { deal: Deal }) {
                           </label>
                         )}
                         {deal.canEdit && <Button variant="ghost" size="sm" className="text-xs text-muted-foreground hover:text-destructive" onClick={() => remove(it.id)}>Remove</Button>}
-                      </div>
+                      </div></div>
+                      {thread === it.id && <ItemThread dealId={deal.id} itemType="request" itemId={it.id} roles={it.sharedWith ?? []} />}
                     </li>
                   ))}
                 </ul>

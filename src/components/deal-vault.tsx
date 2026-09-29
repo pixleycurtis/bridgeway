@@ -7,29 +7,10 @@ import { useDealRows, type DdItem } from "@/lib/deal-tables";
 import type { Deal } from "@/lib/deals-store";
 import { useServerFn } from "@tanstack/react-start";
 import { getSharedFileUrl } from "@/lib/deal-files.functions";
+import { ddTemplate } from "@/lib/checklists";
 import { SharedWith, ImpactInput, AssignRole, ItemThread } from "./deal-room";
 
 const CATEGORIES = ["Financial", "Physical", "Legal & other", "Title"];
-const TEMPLATE: { label: string; category: string }[] = [
-  { label: "Trailing-12 operating statement, month by month", category: "Financial" },
-  { label: "Current certified rent roll", category: "Financial" },
-  { label: "Two prior years of annual operating statements", category: "Financial" },
-  { label: "General ledger, trailing 12 months", category: "Financial" },
-  { label: "Real estate tax bills and pending appeals", category: "Financial" },
-  { label: "Capital expenditure history (3 years)", category: "Physical" },
-  { label: "Property condition & environmental reports", category: "Physical" },
-  { label: "Roof, HVAC and system warranties", category: "Physical" },
-  { label: "Open work orders and unit turn schedule", category: "Physical" },
-  { label: "Service, vendor and management contracts", category: "Legal & other" },
-  { label: "Insurance loss runs (5 years)", category: "Legal & other" },
-  { label: "Pending or threatened litigation", category: "Legal & other" },
-  { label: "Title commitment (Schedule B-II review)", category: "Title" },
-  { label: "ALTA/NSPS survey", category: "Title" },
-  { label: "UCC / lien search", category: "Title" },
-  { label: "Closing protection letter", category: "Title" },
-  { label: "Payoff letters for existing loans", category: "Title" },
-  { label: "Tenant estoppels & SNDAs", category: "Title" },
-];
 
 type FileRow = { id: string; kind: string; name: string; path: string; created_at: string; shared_with: string[] };
 
@@ -88,7 +69,7 @@ export function DealVault({ deal }: { deal: Deal }) {
   };
 
   const addStandard = async () => {
-    for (const t of TEMPLATE) {
+    for (const t of ddTemplate(deal.propertyType)) {
       if (rows.some((r) => r.label === t.label)) continue;
       await add({ label: t.label, category: t.category, received: false });
     }

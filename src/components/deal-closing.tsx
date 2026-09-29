@@ -12,6 +12,7 @@ import { getSharedFileUrl } from "@/lib/deal-files.functions";
 import { SharedWith, ImpactInput, AssignRole, ItemThread } from "./deal-room";
 import { readForAI } from "@/lib/files";
 import { usd } from "@/lib/finance";
+import { closingTemplate } from "@/lib/checklists";
 import type { Deal } from "@/lib/deals-store";
 
 const STATUS: Record<TitleItem["section"], { value: string; label: string }[]> = {
@@ -39,15 +40,6 @@ const COMMITMENT_TEMPLATE = [
   "Survey affidavit / existing survey acceptance",
 ];
 
-const CLOSING_TEMPLATE = [
-  "Escrow instructions executed",
-  "ALTA settlement statement — draft review",
-  "Tenant estoppels & SNDAs collected",
-  "Lender's closing conditions cleared",
-  "Wire instructions verified (call-back)",
-  "Deed recorded & confirmation received",
-  "Owner's & lender's title policies issued",
-];
 
 export function DealClosing({ deal }: { deal: Deal }) {
   const { rows, loading, error, reload, add, update, remove } = useDealRows<TitleItem>("deal_title_items", deal.id, "created_at");
@@ -63,7 +55,7 @@ export function DealClosing({ deal }: { deal: Deal }) {
   const getFileUrl = useServerFn(getSharedFileUrl);
 
   const items = rows.filter((r) => r.section === section);
-  const template = section === "commitment" ? COMMITMENT_TEMPLATE : CLOSING_TEMPLATE;
+  const template = section === "commitment" ? COMMITMENT_TEMPLATE : closingTemplate(deal.propertyType);
   const dateRows = tasks.rows.filter((t) => t.kind === "date");
   const suggestedDates = ["Title objection deadline", "Closing date"].filter((t) => !tasks.rows.some((x) => x.title === t));
 

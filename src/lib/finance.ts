@@ -20,6 +20,10 @@ export interface Assumptions {
   exitCap: number;
   holdYears: number;
   sellPct: number;
+  /** Hospitality only. */
+  rooms?: number;
+  occupancy?: number;
+  adr?: number;
 }
 export interface Adjustment {
   id: string;
@@ -122,6 +126,12 @@ export function solvePrice(items: LineItem[], a: Assumptions, adj: Adjustment[],
     if (isNaN(r) || r < target) hi = mid; else lo = mid;
   }
   return (lo + hi) / 2;
+}
+
+/** Hotel operating metrics: RevPAR, rooms revenue, and price per key. */
+export function hotelMetrics(rooms: number, occupancy: number, adr: number, price: number) {
+  const revpar = occupancy * adr;
+  return { revpar, roomsRevenue: revpar * rooms * 365, pricePerKey: rooms ? price / rooms : NaN, roomNightsSold: rooms * 365 * occupancy };
 }
 
 export const usd = (n: number, compact = false) =>

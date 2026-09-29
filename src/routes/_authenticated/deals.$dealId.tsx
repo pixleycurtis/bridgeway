@@ -14,6 +14,7 @@ import { DealVault } from "@/components/deal-vault";
 import { DealClosing } from "@/components/deal-closing";
 import { LinkedFindings } from "@/components/linked-findings";
 import { MessagesDialog } from "@/components/deal-room";
+import { HotelPanel } from "@/components/hotel-panel";
 import { LenderQuotes } from "@/components/lender-quotes";
 import { useWorkspace } from "@/lib/workspace";
 import { PASS_REASONS, allStages } from "@/lib/firm-settings";
@@ -201,6 +202,7 @@ function Reconcile({ deal, set, onNext }: { deal: Deal; set: (p: Partial<Deal>) 
       </div>
       <aside className="space-y-4">
         {deal.canEdit && <UploadPanel deal={deal} set={set} />}
+        {deal.propertyType === "Hospitality" && <HotelPanel deal={deal} set={set} />}
         <div className="rounded-md border bg-card p-5">
           <div className="text-[11px] uppercase tracking-widest text-muted-foreground">Flagged discrepancies</div>
           <div className="num mt-1 text-3xl">{flags.length}</div>

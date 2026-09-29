@@ -16,6 +16,7 @@ import { Route as AuthenticatedInsightsRouteImport } from './routes/_authenticat
 import { Route as AuthenticatedPortfolioRouteImport } from './routes/_authenticated/portfolio'
 import { Route as AuthenticatedSettingsRouteImport } from './routes/_authenticated/settings'
 import { Route as AuthenticatedTodayRouteImport } from './routes/_authenticated/today'
+import { Route as RoomTokenRouteImport } from './routes/room.$token'
 import { Route as AuthenticatedDealsDealIdRouteImport } from './routes/_authenticated/deals.$dealId'
 import { Route as AuthenticatedDealsDealIdClosingRouteImport } from './routes/_authenticated/deals_.$dealId.closing'
 
@@ -53,6 +54,11 @@ const AuthenticatedTodayRoute = AuthenticatedTodayRouteImport.update({
   path: '/today',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const RoomTokenRoute = RoomTokenRouteImport.update({
+  id: '/room/$token',
+  path: '/room/$token',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AuthenticatedDealsDealIdRoute =
   AuthenticatedDealsDealIdRouteImport.update({
     id: '/deals/$dealId',
@@ -73,6 +79,7 @@ export interface FileRoutesByFullPath {
   '/portfolio': typeof AuthenticatedPortfolioRoute
   '/settings': typeof AuthenticatedSettingsRoute
   '/today': typeof AuthenticatedTodayRoute
+  '/room/$token': typeof RoomTokenRoute
   '/deals/$dealId': typeof AuthenticatedDealsDealIdRoute
   '/deals/$dealId/closing': typeof AuthenticatedDealsDealIdClosingRoute
 }
@@ -82,6 +89,7 @@ export interface FileRoutesByTo {
   '/portfolio': typeof AuthenticatedPortfolioRoute
   '/settings': typeof AuthenticatedSettingsRoute
   '/today': typeof AuthenticatedTodayRoute
+  '/room/$token': typeof RoomTokenRoute
   '/': typeof AuthenticatedIndexRoute
   '/deals/$dealId': typeof AuthenticatedDealsDealIdRoute
   '/deals/$dealId/closing': typeof AuthenticatedDealsDealIdClosingRoute
@@ -94,6 +102,7 @@ export interface FileRoutesById {
   '/_authenticated/portfolio': typeof AuthenticatedPortfolioRoute
   '/_authenticated/settings': typeof AuthenticatedSettingsRoute
   '/_authenticated/today': typeof AuthenticatedTodayRoute
+  '/room/$token': typeof RoomTokenRoute
   '/_authenticated/': typeof AuthenticatedIndexRoute
   '/_authenticated/deals/$dealId': typeof AuthenticatedDealsDealIdRoute
   '/_authenticated/deals_/$dealId/closing': typeof AuthenticatedDealsDealIdClosingRoute
@@ -107,6 +116,7 @@ export interface FileRouteTypes {
     | '/portfolio'
     | '/settings'
     | '/today'
+    | '/room/$token'
     | '/deals/$dealId'
     | '/deals/$dealId/closing'
   fileRoutesByTo: FileRoutesByTo
@@ -116,6 +126,7 @@ export interface FileRouteTypes {
     | '/portfolio'
     | '/settings'
     | '/today'
+    | '/room/$token'
     | '/'
     | '/deals/$dealId'
     | '/deals/$dealId/closing'
@@ -127,6 +138,7 @@ export interface FileRouteTypes {
     | '/_authenticated/portfolio'
     | '/_authenticated/settings'
     | '/_authenticated/today'
+    | '/room/$token'
     | '/_authenticated/'
     | '/_authenticated/deals/$dealId'
     | '/_authenticated/deals_/$dealId/closing'
@@ -135,6 +147,7 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
   AuthRoute: typeof AuthRoute
+  RoomTokenRoute: typeof RoomTokenRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -188,6 +201,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedTodayRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/room/$token': {
+      id: '/room/$token'
+      path: '/room/$token'
+      fullPath: '/room/$token'
+      preLoaderRoute: typeof RoomTokenRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/_authenticated/deals/$dealId': {
       id: '/_authenticated/deals/$dealId'
       path: '/deals/$dealId'
@@ -231,6 +251,7 @@ const AuthenticatedRouteRouteWithChildren =
 const rootRouteChildren: RootRouteChildren = {
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
   AuthRoute: AuthRoute,
+  RoomTokenRoute: RoomTokenRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

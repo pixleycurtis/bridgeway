@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { SharedWith } from "./deal-room";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
@@ -17,17 +18,19 @@ export function DocumentsStudio({ deal }: { deal: Deal }) {
   const [kind, setKind] = useState<DocKind>("memo");
   const [saved, setSaved] = useState<Record<string, Section[]>>({});
   const [editing, setEditing] = useState(deal.canEdit);
-  const [titleItems, setTitleItems] = useState<{ item: string; status: string }[]>([]);
+  const [titleItems, setTitleItems] = useState<{ item: string; status: string; impact: { type: string; amount: number } | null }[]>([]);
+  const [shared, setShared] = useState<Record<string, string[]>>({});
   const saveT = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     (async () => {
       const { data: f } = await supabase.from("firms").select("*").eq("id", deal.firmId).maybeSingle();
       if (f) { setFirm(f); setLogo(await signedLogo(f.logo_path)); }
-      const { data } = await supabase.from("deal_documents").select("kind, sections").eq("deal_id", deal.id);
+      const { data } = await supabase.from("deal_documents").select("kind, sections, shared_with").eq("deal_id", deal.id);
+      setShared(Object.fromEntries((data ?? []).map((d) => [d.kind, d.shared_with ?? []])));
       setSaved(Object.fromEntries((data ?? []).map((d) => [d.kind, d.sections as unknown as Section[]])));
-      const { data: ti } = await supabase.from("deal_title_items").select("item, status").eq("deal_id", deal.id).eq("section", "commitment");
-      setTitleItems((ti ?? []) as { item: string; status: string }[]);
+      const { data: ti } = await supabase.from("deal_title_items").select("item, status, impact").eq("deal_id", deal.id).eq("section", "commitment");
+      setTitleItems((ti ?? []) as unknown as { item: string; status: string; impact: { type: string; amount: number } | null }[]);
     })();
   }, [deal.id, deal.firmId]);
 
@@ -50,6 +53,7 @@ export function DocumentsStudio({ deal }: { deal: Deal }) {
   const reset = async () => {
     await supabase.from("deal_documents").delete().eq("deal_id", deal.id).eq("kind", kind);
     setSaved((s) => { const n = { ...s }; delete n[kind]; return n; });
+    setShared((s) => ({ ...s, [kind]: [] }));
     toast.success("Rebuilt from the latest numbers");
   };
 
@@ -80,6 +84,11 @@ export function DocumentsStudio({ deal }: { deal: Deal }) {
           <div className="flex gap-2">
             {deal.canEdit && <Button variant="ghost" size="sm" onClick={() => setEditing(!editing)}>{editing ? "Preview" : "Edit"}</Button>}
             {deal.canEdit && <Button variant="ghost" size="sm" onClick={reset}>Rebuild from numbers</Button>}
+            {deal.canEdit && <span className="flex items-center gap-1.5 text-xs text-muted-foreground">Shared with <SharedWith value={shared[kind] ?? []} onChange={async (v) => {
+              const { error } = await supabase.from("deal_documents").upsert({ deal_id: deal.id, kind, title: meta.title, sections: sections as never, shared_with: v, updated_at: new Date().toISOString() }, { onConflict: "deal_id,kind" });
+              if (error) { toast.error(error.message); return; }
+              setShared((s) => ({ ...s, [kind]: v })); setSaved((s) => ({ ...s, [kind]: sections }));
+            }} /></span>}
             <Button size="sm" onClick={exportPdf}>Download PDF</Button>
           </div>
         </div>

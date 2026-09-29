@@ -1,10 +1,9 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import type { Deal } from "@/lib/deals-store";
 import { usd } from "@/lib/finance";
 import { ACCEPT, readForAI } from "@/lib/files";
@@ -92,50 +91,4 @@ export function UploadPanel({ deal, set }: { deal: Deal; set: (p: Partial<Deal>)
   );
 }
 
-type Share = { id: string; email: string; party: string };
-
-export function ShareDialog({ deal }: { deal: Deal }) {
-  const { user } = useWorkspace();
-  const [shares, setShares] = useState<Share[]>([]);
-  const [email, setEmail] = useState("");
-  const [party, setParty] = useState("lender");
-  const load = async () => {
-    const { data } = await supabase.from("deal_shares").select("id, email, party").eq("deal_id", deal.id);
-    setShares(data ?? []);
-  };
-  useEffect(() => { load(); }, [deal.id]); // eslint-disable-line react-hooks/exhaustive-deps
-  const add = async (e: React.FormEvent) => {
-    e.preventDefault();
-    const clean = email.trim().toLowerCase();
-    if (!/^\S+@\S+\.\S+$/.test(clean)) { toast.error("Enter a valid email"); return; }
-    const { error } = await supabase.from("deal_shares").insert({ deal_id: deal.id, email: clean, party, created_by: user.id });
-    if (error) { toast.error(error.message); return; }
-    setEmail(""); load();
-    toast.success(`Shared with ${clean}. They'll see it after signing in with that email.`);
-  };
-  return (
-    <Dialog>
-      <DialogTrigger asChild><Button variant="outline">Share</Button></DialogTrigger>
-      <DialogContent>
-        <DialogHeader><DialogTitle className="font-display text-2xl font-normal">Share with outside parties</DialogTitle></DialogHeader>
-        <p className="text-sm text-muted-foreground">Lenders, sellers, and title or escrow officers get view-only access to this deal and its documents. Everyone at your firm can already see and edit it.</p>
-        <form onSubmit={add} className="flex gap-2">
-          <Input placeholder="name@lender.com" value={email} onChange={(e) => setEmail(e.target.value)} />
-          <select value={party} onChange={(e) => setParty(e.target.value)} className="rounded-md border bg-card px-2 text-sm">
-            <option value="lender">Lender</option><option value="seller">Seller</option><option value="title">Title / escrow officer</option><option value="other">Other</option>
-          </select>
-          <Button type="submit">Invite</Button>
-        </form>
-        <ul className="divide-y rounded-md border text-sm">
-          {shares.length === 0 && <li className="p-3 text-muted-foreground">Not shared with anyone outside your firm.</li>}
-          {shares.map((s) => (
-            <li key={s.id} className="flex items-center justify-between p-3">
-              <span>{s.email} <span className="ml-1 text-xs capitalize text-muted-foreground">{s.party} · view only</span></span>
-              <Button variant="ghost" size="sm" className="text-xs text-muted-foreground hover:text-destructive" onClick={async () => { await supabase.from("deal_shares").delete().eq("id", s.id); load(); }}>Remove</Button>
-            </li>
-          ))}
-        </ul>
-      </DialogContent>
-    </Dialog>
-  );
-}
+export { ShareDialog } from "./deal-room";

@@ -12,6 +12,7 @@ import { ShareDialog, UploadPanel } from "@/components/deal-extras";
 import { DealSchedule } from "@/components/deal-schedule";
 import { DealVault } from "@/components/deal-vault";
 import { DealClosing } from "@/components/deal-closing";
+import { LinkedFindings } from "@/components/linked-findings";
 import { LenderQuotes } from "@/components/lender-quotes";
 import { useWorkspace } from "@/lib/workspace";
 import { PASS_REASONS, allStages } from "@/lib/firm-settings";
@@ -345,11 +346,12 @@ We remain committed to closing on the current timeline and look forward to your 
           </select>
           <Button type="submit" variant="secondary">Add</Button>
         </form>
+        {deal.canEdit && <LinkedFindings deal={deal} set={set} />}
         <ul className="mt-4 divide-y rounded-md border bg-card">
           {deal.adjustments.length === 0 && <li className="p-4 text-sm text-muted-foreground">No findings yet.</li>}
           {deal.adjustments.map((a) => (
             <li key={a.id} className="flex items-center justify-between gap-3 px-4 py-3 text-sm">
-              <div>{a.label}<div className="text-xs text-muted-foreground">{a.type === "annual" ? "Recurring · per year" : "One-time at close"}</div></div>
+              <div>{a.label}<div className="text-xs text-muted-foreground">{a.type === "annual" ? "Recurring · per year" : "One-time at close"}{a.source ? " · linked" : ""}</div></div>
               <div className="flex items-center gap-3">
                 <span className="num">{usd(a.amount)}</span>
                 <button className="text-xs text-muted-foreground hover:text-destructive" onClick={() => set({ adjustments: deal.adjustments.filter((x) => x.id !== a.id) })}>Remove</button>

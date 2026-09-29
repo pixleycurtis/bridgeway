@@ -23,6 +23,8 @@ export interface DdItem {
   category: string;
   received: boolean;
   filePath: string | null;
+  sharedWith: string[];
+  impact: Impact | null;
 }
 
 /** A title commitment item or closing checklist row. */
@@ -33,7 +35,12 @@ export interface TitleItem {
   status: string;
   dueDate: string | null;
   filePath: string | null;
+  sharedWith: string[];
+  impact: Impact | null;
 }
+
+/** Dollar effect of a finding: annual NOI hit, one-time capital, or a straight price credit. */
+export interface Impact { type: "annual" | "onetime" | "credit"; amount: number }
 
 /** A lender quote / term sheet. */
 export interface Quote {
@@ -111,7 +118,7 @@ export function useDealRows<T>(table: string, dealId: string | undefined, order 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const { error } = await (supabase.from as any)(table).update(values).eq("id", id);
     if (error) { toast.error(error.message); return; }
-    setRows((rs) => rs.map((r) => ({ ...(r as RowShape), ...camelize(values) } as unknown as T)));
+    setRows((rs) => rs.map((r) => ((r as unknown as { id: string }).id === id ? { ...(r as RowShape), ...camelize(values) } : r) as unknown as T));
     if (table === "deal_tasks" || table === "deal_dd_items") signalActionsChanged();
   };
   const remove = async (id: string) => {

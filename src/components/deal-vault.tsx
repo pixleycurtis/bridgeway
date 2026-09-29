@@ -7,6 +7,7 @@ import { useDealRows, type DdItem } from "@/lib/deal-tables";
 import type { Deal } from "@/lib/deals-store";
 import { useServerFn } from "@tanstack/react-start";
 import { getSharedFileUrl } from "@/lib/deal-files.functions";
+import { SharedWith, ImpactInput } from "./deal-room";
 
 const CATEGORIES = ["Financial", "Physical", "Legal & other", "Title"];
 const TEMPLATE: { label: string; category: string }[] = [
@@ -30,7 +31,7 @@ const TEMPLATE: { label: string; category: string }[] = [
   { label: "Tenant estoppels & SNDAs", category: "Title" },
 ];
 
-type FileRow = { id: string; kind: string; name: string; path: string; created_at: string };
+type FileRow = { id: string; kind: string; name: string; path: string; created_at: string; shared_with: string[] };
 
 export function DealVault({ deal }: { deal: Deal }) {
   const { rows, loading, error, reload, add, update, remove } = useDealRows<DdItem>("deal_dd_items", deal.id, "created_at");
@@ -46,7 +47,7 @@ export function DealVault({ deal }: { deal: Deal }) {
   useEffect(() => {
     (async () => {
       setFilesLoading(true);
-      const { data, error: readError } = await supabase.from("deal_files").select("id, kind, name, path, created_at").eq("deal_id", deal.id).order("created_at", { ascending: false });
+      const { data, error: readError } = await supabase.from("deal_files").select("id, kind, name, path, created_at, shared_with").eq("deal_id", deal.id).order("created_at", { ascending: false });
       if (readError) setFileError(readError.message);
       else { setFiles((data ?? []) as FileRow[]); setFileError(null); }
       setFilesLoading(false);
@@ -74,7 +75,7 @@ export function DealVault({ deal }: { deal: Deal }) {
     const { error: metadataError } = await supabase.from("deal_files").insert({ deal_id: deal.id, kind: "dd", name: file.name, path });
     if (metadataError) { await supabase.storage.from("deal-files").remove([path]); toast.error(metadataError.message); return; }
     await update(item.id, { received: true, file_path: path });
-    setFiles((fs) => [{ id: crypto.randomUUID(), kind: "dd", name: file.name, path, created_at: new Date().toISOString() }, ...fs]);
+    setFiles((fs) => [{ id: crypto.randomUUID(), kind: "dd", name: file.name, path, created_at: new Date().toISOString(), shared_with: [] }, ...fs]);
     toast.success("Filed");
   };
 
@@ -130,6 +131,8 @@ export function DealVault({ deal }: { deal: Deal }) {
                         <span className={it.received ? "text-muted-foreground line-through" : ""}>{it.label}</span>
                       </label>
                       <div className="flex shrink-0 items-center gap-2">
+                        {deal.canEdit && <ImpactInput value={it.impact} onChange={(v) => update(it.id, { impact: v })} />}
+                        {deal.canEdit && <SharedWith value={it.sharedWith ?? []} onChange={(v) => update(it.id, { shared_with: v })} />}
                         {it.filePath && <Button variant="link" size="sm" className="h-auto p-0 text-xs" onClick={() => void openFile(it.filePath ?? "")}>Open file</Button>}
                         {deal.canEdit && !it.filePath && files.length > 0 && (
                           linkingItem === it.id ? <span className="flex items-center gap-1">
@@ -168,7 +171,8 @@ export function DealVault({ deal }: { deal: Deal }) {
           {files.map((f) => (
             <li key={f.id} className="px-4 py-2.5">
               <Button variant="link" size="sm" className="h-auto max-w-full truncate p-0 text-left" onClick={() => void openFile(f.path)}>{f.name}</Button>
-              <div className="text-xs capitalize text-muted-foreground">{f.kind === "om" ? "Broker OM" : f.kind === "t12" ? "T-12" : "Document"} · {f.created_at.slice(0, 10)}</div>
+              <div className="flex items-center justify-between gap-2 text-xs text-muted-foreground"><span>{f.kind === "om" ? "Broker OM" : f.kind === "t12" ? "T-12" : f.kind === "guest" ? "From outside party" : "Document"} · {f.created_at.slice(0, 10)}</span>
+                {deal.canEdit && <SharedWith value={f.shared_with ?? []} onChange={async (v) => { const { error } = await supabase.from("deal_files").update({ shared_with: v }).eq("id", f.id); if (error) { toast.error(error.message); return; } setFiles((fs) => fs.map((x) => x.id === f.id ? { ...x, shared_with: v } : x)); }} />}</div>
             </li>
           ))}
         </ul>

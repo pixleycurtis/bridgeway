@@ -26,6 +26,22 @@ export interface Adjustment {
   label: string;
   type: "annual" | "onetime";
   amount: number;
+  /** Id of the data room / title item or reconcile line this finding came from. */
+  source?: string;
+}
+
+/** Turn a priced finding into a retrade adjustment. A price credit costs the buyer like one-time capital. */
+export function findingAdjustment(source: string, label: string, impact: { type: "annual" | "onetime" | "credit"; amount: number }): Adjustment {
+  return { id: `f-${source}`, source, label: impact.type === "credit" ? `${label} (credit)` : label, type: impact.type === "annual" ? "annual" : "onetime", amount: impact.amount };
+}
+
+/** Lines where underwriting is at least 10% more optimistic than the T-12, with the yearly NOI at stake. */
+export function underwritingGaps(items: LineItem[]) {
+  return items.flatMap((l) => {
+    if (!l.t12) return [];
+    const gap = l.kind === "income" ? l.underwrite - l.t12 : l.t12 - l.underwrite;
+    return gap / l.t12 >= 0.1 ? [{ key: l.key, label: `${l.label}: underwriting vs T-12`, amount: Math.round(gap) }] : [];
+  });
 }
 
 export const sumBy = (items: LineItem[], col: "broker" | "t12" | "underwrite") => {

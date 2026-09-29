@@ -35,7 +35,7 @@ export function dealFacts(d: Deal) {
   ].join("\n");
 }
 
-export function defaultSections(kind: DocKind, d: Deal, firm: Firm | null, titleItems: { item: string; status: string }[] = []): Section[] {
+export function defaultSections(kind: DocKind, d: Deal, firm: Firm | null, titleItems: { item: string; status: string; impact?: { type: string; amount: number } | null }[] = []): Section[] {
   const r = analyze(d.lines, d.assumptions, d.adjustments);
   const a = d.assumptions;
   const t = sumBy(d.lines, "t12");
@@ -95,7 +95,7 @@ export function defaultSections(kind: DocKind, d: Deal, firm: Firm | null, title
     case "objection": {
       const objected = titleItems.filter((t) => t.status === "objected");
       const candidates = objected.length ? objected : titleItems.filter((t) => t.status === "open");
-      const list = candidates.map((t) => `• ${t.item}`).join("\n");
+      const list = candidates.map((t) => `• ${t.item}${t.impact ? ` — estimated cost to buyer ${usd(t.impact.amount)}${t.impact.type === "annual" ? " per year" : ""}` : ""}`).join("\n");
       return [
         s("Letter", `${today}\n\nRe: ${d.name}${where ? `, ${where}` : ""} — Title commitment objections\n\nWe have reviewed the commitment for title insurance issued in connection with the above transaction. We object to the following matters shown in Schedule B-II and require that they be removed from the policy or affirmatively insured over:`),
         s("Objections", list || "• (Mark the exceptions you object to in the Title & closing tracker, then rebuild this letter.)"),

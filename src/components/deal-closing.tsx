@@ -9,6 +9,7 @@ import { useDealRows, type Task, type TitleItem } from "@/lib/deal-tables";
 import { useWorkspace } from "@/lib/workspace";
 import { extractCommitment, type CommitmentExtract } from "@/lib/ai.functions";
 import { getSharedFileUrl } from "@/lib/deal-files.functions";
+import { SharedWith, ImpactInput } from "./deal-room";
 import { readForAI } from "@/lib/files";
 import { usd } from "@/lib/finance";
 import type { Deal } from "@/lib/deals-store";
@@ -17,12 +18,14 @@ const STATUS: Record<TitleItem["section"], { value: string; label: string }[]> =
   commitment: [
     { value: "open", label: "Open" },
     { value: "objected", label: "Objected" },
+    { value: "received", label: "Received — review" },
     { value: "cleared", label: "Cleared" },
     { value: "accepted", label: "Accepted" },
   ],
   closing: [
     { value: "open", label: "Open" },
     { value: "in-progress", label: "In progress" },
+    { value: "received", label: "Received — review" },
     { value: "done", label: "Done" },
   ],
 };
@@ -185,6 +188,8 @@ export function DealClosing({ deal }: { deal: Deal }) {
                       <input type="file" className="hidden" onChange={(e) => { void onFile(it, e.target.files?.[0]); e.target.value = ""; }} />
                     </label>
                   )}
+                  {deal.canEdit && section === "commitment" && <ImpactInput value={it.impact} onChange={(v) => update(it.id, { impact: v })} />}
+                  {deal.canEdit && <SharedWith value={it.sharedWith ?? []} onChange={(v) => update(it.id, { shared_with: v })} />}
                   {deal.canEdit && <button className="hover:text-destructive" onClick={() => void remove(it.id)}>Remove</button>}
                 </div>
               </li>

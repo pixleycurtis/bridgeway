@@ -90,7 +90,7 @@ export const finishRoomUpload = createServerFn({ method: "POST" })
     if (!data.path.startsWith(`${deal.firm_id}/${deal.id}/guest/`)) throw new Error("Invalid upload");
     const item = await sharedItem(admin, data.itemType, data.itemId, deal.id, party.role);
     if (!item) throw new Error("This request isn't shared with you");
-    const { data: exists } = await admin.storage.from("deal-files").list(data.path.split("/").slice(0, -1).join("/"), { search: data.path.split("/").pop() });
+    const { data: exists } = await admin.storage.from("deal-files").list(data.path.split("/").slice(0, -1).join("/"), { search: data.path.split("/").pop() ?? "" });
     if (!exists?.length) throw new Error("Upload not found");
     await admin.from("deal_files").insert({ deal_id: deal.id, kind: "guest", name: data.fileName, path: data.path, shared_with: [party.role] });
     if (data.itemType === "request") await admin.from("deal_dd_items").update({ file_path: data.path }).eq("id", data.itemId);

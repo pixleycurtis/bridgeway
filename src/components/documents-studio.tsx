@@ -53,6 +53,7 @@ export function DocumentsStudio({ deal }: { deal: Deal }) {
   const reset = async () => {
     await supabase.from("deal_documents").delete().eq("deal_id", deal.id).eq("kind", kind);
     setSaved((s) => { const n = { ...s }; delete n[kind]; return n; });
+    setShared((s) => ({ ...s, [kind]: [] }));
     toast.success("Rebuilt from the latest numbers");
   };
 

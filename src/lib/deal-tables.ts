@@ -23,6 +23,8 @@ export interface DdItem {
   category: string;
   received: boolean;
   filePath: string | null;
+  sharedWith: string[];
+  impact: Impact | null;
 }
 
 /** A title commitment item or closing checklist row. */
@@ -33,7 +35,12 @@ export interface TitleItem {
   status: string;
   dueDate: string | null;
   filePath: string | null;
+  sharedWith: string[];
+  impact: Impact | null;
 }
+
+/** Dollar effect of a finding: annual NOI hit, one-time capital, or a straight price credit. */
+export interface Impact { type: "annual" | "onetime" | "credit"; amount: number }
 
 /** A lender quote / term sheet. */
 export interface Quote {

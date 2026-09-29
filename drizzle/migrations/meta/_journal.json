@@ -57,6 +57,13 @@
       "when": 1790714244690,
       "tag": "0007_deal_parties_shared_room",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1790715215960,
+      "tag": "0008_party_accounts_threads_assignments",
+      "breakpoints": true
     }
   ]
 }

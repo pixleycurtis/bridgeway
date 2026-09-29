@@ -18,6 +18,8 @@ import { Route as AuthenticatedSettingsRouteImport } from './routes/_authenticat
 import { Route as AuthenticatedTodayRouteImport } from './routes/_authenticated/today'
 import { Route as RoomTokenRouteImport } from './routes/room.$token'
 import { Route as AuthenticatedDealsDealIdRouteImport } from './routes/_authenticated/deals.$dealId'
+import { Route as AuthenticatedWorkIndexRouteImport } from './routes/_authenticated/work.index'
+import { Route as AuthenticatedWorkPartyIdRouteImport } from './routes/_authenticated/work.$partyId'
 import { Route as AuthenticatedDealsDealIdClosingRouteImport } from './routes/_authenticated/deals_.$dealId.closing'
 
 const AuthenticatedRouteRoute = AuthenticatedRouteRouteImport.update({
@@ -65,6 +67,17 @@ const AuthenticatedDealsDealIdRoute =
     path: '/deals/$dealId',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedWorkIndexRoute = AuthenticatedWorkIndexRouteImport.update({
+  id: '/work/',
+  path: '/work/',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedWorkPartyIdRoute =
+  AuthenticatedWorkPartyIdRouteImport.update({
+    id: '/work/$partyId',
+    path: '/work/$partyId',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedDealsDealIdClosingRoute =
   AuthenticatedDealsDealIdClosingRouteImport.update({
     id: '/deals_/$dealId/closing',
@@ -81,6 +94,8 @@ export interface FileRoutesByFullPath {
   '/today': typeof AuthenticatedTodayRoute
   '/room/$token': typeof RoomTokenRoute
   '/deals/$dealId': typeof AuthenticatedDealsDealIdRoute
+  '/work/$partyId': typeof AuthenticatedWorkPartyIdRoute
+  '/work/': typeof AuthenticatedWorkIndexRoute
   '/deals/$dealId/closing': typeof AuthenticatedDealsDealIdClosingRoute
 }
 export interface FileRoutesByTo {
@@ -92,6 +107,8 @@ export interface FileRoutesByTo {
   '/room/$token': typeof RoomTokenRoute
   '/': typeof AuthenticatedIndexRoute
   '/deals/$dealId': typeof AuthenticatedDealsDealIdRoute
+  '/work/$partyId': typeof AuthenticatedWorkPartyIdRoute
+  '/work': typeof AuthenticatedWorkIndexRoute
   '/deals/$dealId/closing': typeof AuthenticatedDealsDealIdClosingRoute
 }
 export interface FileRoutesById {
@@ -105,6 +122,8 @@ export interface FileRoutesById {
   '/room/$token': typeof RoomTokenRoute
   '/_authenticated/': typeof AuthenticatedIndexRoute
   '/_authenticated/deals/$dealId': typeof AuthenticatedDealsDealIdRoute
+  '/_authenticated/work/$partyId': typeof AuthenticatedWorkPartyIdRoute
+  '/_authenticated/work/': typeof AuthenticatedWorkIndexRoute
   '/_authenticated/deals_/$dealId/closing': typeof AuthenticatedDealsDealIdClosingRoute
 }
 export interface FileRouteTypes {
@@ -118,6 +137,8 @@ export interface FileRouteTypes {
     | '/today'
     | '/room/$token'
     | '/deals/$dealId'
+    | '/work/$partyId'
+    | '/work/'
     | '/deals/$dealId/closing'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -129,6 +150,8 @@ export interface FileRouteTypes {
     | '/room/$token'
     | '/'
     | '/deals/$dealId'
+    | '/work/$partyId'
+    | '/work'
     | '/deals/$dealId/closing'
   id:
     | '__root__'
@@ -141,6 +164,8 @@ export interface FileRouteTypes {
     | '/room/$token'
     | '/_authenticated/'
     | '/_authenticated/deals/$dealId'
+    | '/_authenticated/work/$partyId'
+    | '/_authenticated/work/'
     | '/_authenticated/deals_/$dealId/closing'
   fileRoutesById: FileRoutesById
 }
@@ -215,6 +240,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedDealsDealIdRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/work/': {
+      id: '/_authenticated/work/'
+      path: '/work'
+      fullPath: '/work/'
+      preLoaderRoute: typeof AuthenticatedWorkIndexRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/work/$partyId': {
+      id: '/_authenticated/work/$partyId'
+      path: '/work/$partyId'
+      fullPath: '/work/$partyId'
+      preLoaderRoute: typeof AuthenticatedWorkPartyIdRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/deals_/$dealId/closing': {
       id: '/_authenticated/deals_/$dealId/closing'
       path: '/deals/$dealId/closing'
@@ -232,6 +271,8 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedTodayRoute: typeof AuthenticatedTodayRoute
   AuthenticatedIndexRoute: typeof AuthenticatedIndexRoute
   AuthenticatedDealsDealIdRoute: typeof AuthenticatedDealsDealIdRoute
+  AuthenticatedWorkPartyIdRoute: typeof AuthenticatedWorkPartyIdRoute
+  AuthenticatedWorkIndexRoute: typeof AuthenticatedWorkIndexRoute
   AuthenticatedDealsDealIdClosingRoute: typeof AuthenticatedDealsDealIdClosingRoute
 }
 
@@ -242,6 +283,8 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedTodayRoute: AuthenticatedTodayRoute,
   AuthenticatedIndexRoute: AuthenticatedIndexRoute,
   AuthenticatedDealsDealIdRoute: AuthenticatedDealsDealIdRoute,
+  AuthenticatedWorkPartyIdRoute: AuthenticatedWorkPartyIdRoute,
+  AuthenticatedWorkIndexRoute: AuthenticatedWorkIndexRoute,
   AuthenticatedDealsDealIdClosingRoute: AuthenticatedDealsDealIdClosingRoute,
 }
 

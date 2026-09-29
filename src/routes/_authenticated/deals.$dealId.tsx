@@ -13,6 +13,8 @@ import { DealSchedule } from "@/components/deal-schedule";
 import { DealVault } from "@/components/deal-vault";
 import { DealClosing } from "@/components/deal-closing";
 import { LinkedFindings } from "@/components/linked-findings";
+import { MessagesDialog } from "@/components/deal-room";
+import { HotelPanel } from "@/components/hotel-panel";
 import { LenderQuotes } from "@/components/lender-quotes";
 import { useWorkspace } from "@/lib/workspace";
 import { PASS_REASONS, allStages } from "@/lib/firm-settings";
@@ -74,6 +76,7 @@ function DealPage() {
           </div>
           {deal.canEdit ? (
             <div className="flex gap-2">
+              <MessagesDialog deal={deal} />
               <ShareDialog deal={deal} />
               <select value={deal.propertyType} onChange={(e) => set({ propertyType: e.target.value })} className="rounded-md border bg-card px-3 py-2 text-sm" aria-label="Property type">
                 {[...new Set([...settings.propertyTypes, deal.propertyType])].map((t) => <option key={t}>{t}</option>)}
@@ -199,6 +202,7 @@ function Reconcile({ deal, set, onNext }: { deal: Deal; set: (p: Partial<Deal>) 
       </div>
       <aside className="space-y-4">
         {deal.canEdit && <UploadPanel deal={deal} set={set} />}
+        {deal.propertyType === "Hospitality" && <HotelPanel deal={deal} set={set} />}
         <div className="rounded-md border bg-card p-5">
           <div className="text-[11px] uppercase tracking-widest text-muted-foreground">Flagged discrepancies</div>
           <div className="num mt-1 text-3xl">{flags.length}</div>
@@ -250,7 +254,7 @@ function Underwrite({ deal, set, onNext }: { deal: Deal; set: (p: Partial<Deal>)
                 <label key={f.k} className="flex items-center justify-between gap-3 px-4 py-1.5 text-sm">
                   <span>{f.label}</span>
                   <span className="flex w-36 items-center">
-                    <Num value={f.pct ? +(a[f.k] * 100).toFixed(3) : a[f.k]} onChange={(v) => setA(f.k, f.pct ? v / 100 : v)} />
+                    <Num value={f.pct ? +((a[f.k] ?? 0) * 100).toFixed(3) : a[f.k] ?? 0} onChange={(v) => setA(f.k, f.pct ? v / 100 : v)} />
                     {f.pct && <span className="text-muted-foreground">%</span>}
                   </span>
                 </label>

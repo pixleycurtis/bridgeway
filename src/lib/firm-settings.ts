@@ -2,7 +2,7 @@ import type { Json } from "@/integrations/supabase/types";
 
 export const TERMINAL = ["Closed", "Passed"] as const;
 export const DEFAULT_STAGES = ["Screening", "Underwriting", "LOI", "Under contract", "Closing"];
-export const DEFAULT_TYPES = ["Multifamily", "Retail", "Office", "Industrial", "Mixed-use", "Self-storage"];
+export const DEFAULT_TYPES = ["Multifamily", "Retail", "Office", "Industrial", "Hospitality", "Mixed-use", "Self-storage"];
 export const PASS_REASONS = ["Price too high", "Seller wouldn't retrade", "Failed diligence", "Financing", "Lost to another buyer", "Market / location", "Returns below target", "Other"];
 
 export const PIPELINE_COLUMNS = [

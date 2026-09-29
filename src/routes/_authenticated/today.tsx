@@ -1,5 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { supabase } from "@/integrations/supabase/client";
 import { PageHeader } from "@/components/app-shell";
 import { Button } from "@/components/ui/button";
 import { useDealActions, actionPriority, type ActionTask } from "@/lib/deal-actions";
@@ -27,6 +28,14 @@ function Today() {
   const active = deals.filter((d) => isOpen(d.stage));
   const { tasks, requests, members, loading, error, reload, completeTask } = useDealActions(active);
   const [scope, setScope] = useState<Scope>("mine");
+  const [inbox, setInbox] = useState<{ id: string; deal_id: string; kind: string; detail: string | null; created_at: string }[]>([]);
+  const activeKey = active.map((d) => d.id).join(",");
+  useEffect(() => {
+    if (!activeKey) { setInbox([]); return; }
+    const since = new Date(Date.now() - 7 * 864e5).toISOString();
+    void supabase.from("deal_party_events").select("id, deal_id, kind, detail, created_at").in("deal_id", activeKey.split(",")).in("kind", ["upload", "comment"]).gte("created_at", since).order("created_at", { ascending: false }).limit(15)
+      .then(({ data }) => setInbox(data ?? []));
+  }, [activeKey]);
   const today = new Date().toLocaleDateString("en-CA");
   const dealById = new Map(active.map((d) => [d.id, d]));
   const visible = tasks.filter((t) => !t.done && (scope === "team" || (scope === "unassigned" ? !t.assignee : t.kind === "date" || t.assignee === me?.id)));
@@ -70,6 +79,12 @@ function Today() {
           {!sorted.length && <div className="border-t py-10 text-sm text-muted-foreground">{scope === "mine" ? "Nothing assigned to you. Check Team or add tasks to an active deal." : scope === "unassigned" ? "No unassigned tasks or key dates." : "No open tasks or key dates. Add them to an active deal."}</div>}
         </div>
         <aside>
+          {inbox.length > 0 && <div className="mb-8">
+            <div className="flex items-baseline justify-between border-b pb-2"><h2 className="font-display text-2xl">From outside parties</h2><span className="num text-xs text-muted-foreground">{inbox.length} this week</span></div>
+            <ul className="divide-y text-sm">
+              {inbox.map((e) => { const deal = dealById.get(e.deal_id); return deal && <li key={e.id} className="py-3"><div>{e.kind === "upload" ? "New upload" : "New message"}: {e.detail}</div><Link to="/deals/$dealId" params={{ dealId: deal.id }} search={{ step: "vault" }} className="text-xs text-muted-foreground hover:underline">{deal.name} · {new Date(e.created_at).toLocaleDateString()} →</Link></li>; })}
+            </ul>
+          </div>}
           <div className="flex items-baseline justify-between border-b pb-2"><h2 className="font-display text-2xl">Awaiting documents</h2><span className="num text-xs text-muted-foreground">{outstanding.length}</span></div>
           <ul className="divide-y text-sm">
             {outstanding.slice(0, 20).map((item) => { const deal = dealById.get(item.deal_id); return deal && <li key={item.id} className="py-3"><div>{item.label}</div><Link to="/deals/$dealId" params={{ dealId: deal.id }} search={{ step: "vault" }} className="text-xs text-muted-foreground hover:underline">{deal.name} · {item.category} →</Link></li>; })}

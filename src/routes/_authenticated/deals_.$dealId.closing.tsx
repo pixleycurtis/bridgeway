@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useDeals } from "@/lib/deals-store";
 import { useDealRows, type TitleItem } from "@/lib/deal-tables";
+import { closingTemplate } from "@/lib/checklists";
 import { useWorkspace } from "@/lib/workspace";
 
 export const Route = createFileRoute("/_authenticated/deals_/$dealId/closing")({
@@ -20,15 +21,6 @@ export const Route = createFileRoute("/_authenticated/deals_/$dealId/closing")({
   component: ClosingChecklistPage,
 });
 
-const STANDARD = [
-  "Escrow instructions executed",
-  "ALTA settlement statement — draft review",
-  "Tenant estoppels & SNDAs collected",
-  "Lender's closing conditions cleared",
-  "Wire instructions verified (call-back)",
-  "Deed recorded & confirmation received",
-  "Owner's & lender's title policies issued",
-];
 
 function ClosingChecklistPage() {
   const { dealId } = Route.useParams();
@@ -65,7 +57,7 @@ function ClosingChecklistPage() {
           <Input className="h-9 min-w-48 flex-1" placeholder="Add a closing task…" value={label} onChange={(e) => setLabel(e.target.value)} />
           <Input type="date" aria-label="Due date" className="h-9 w-36" value={due} onChange={(e) => setDue(e.target.value)} />
           <Button type="submit" variant="secondary" size="sm">Add</Button>
-          <Button type="button" variant="outline" size="sm" onClick={() => { void (async () => { for (const t of STANDARD) if (!items.some((r) => r.item === t)) await add({ section: "closing", item: t, status: "open" }); })(); }}>Use the standard list</Button>
+          <Button type="button" variant="outline" size="sm" onClick={() => { void (async () => { for (const t of closingTemplate(deal.propertyType)) if (!items.some((r) => r.item === t)) await add({ section: "closing", item: t, status: "open" }); })(); }}>Use the standard list</Button>
         </form>
       )}
 

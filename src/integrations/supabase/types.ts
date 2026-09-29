@@ -67,6 +67,7 @@ export type Database = {
       }
       deal_dd_items: {
         Row: {
+          assigned_role: string | null
           category: string
           created_at: string
           created_by: string | null
@@ -80,6 +81,7 @@ export type Database = {
           shared_with: string[]
         }
         Insert: {
+          assigned_role?: string | null
           category?: string
           created_at?: string
           created_by?: string | null
@@ -93,6 +95,7 @@ export type Database = {
           shared_with?: string[]
         }
         Update: {
+          assigned_role?: string | null
           category?: string
           created_at?: string
           created_by?: string | null
@@ -279,6 +282,7 @@ export type Database = {
           revoked_at: string | null
           role: string
           token_hash: string | null
+          user_id: string | null
         }
         Insert: {
           created_at?: string
@@ -291,6 +295,7 @@ export type Database = {
           revoked_at?: string | null
           role?: string
           token_hash?: string | null
+          user_id?: string | null
         }
         Update: {
           created_at?: string
@@ -303,6 +308,7 @@ export type Database = {
           revoked_at?: string | null
           role?: string
           token_hash?: string | null
+          user_id?: string | null
         }
         Relationships: [
           {
@@ -393,6 +399,7 @@ export type Database = {
       }
       deal_tasks: {
         Row: {
+          assigned_role: string | null
           assignee: string | null
           created_at: string
           created_by: string | null
@@ -402,9 +409,11 @@ export type Database = {
           firm_id: string
           id: string
           kind: string
+          shared_with: string[]
           title: string
         }
         Insert: {
+          assigned_role?: string | null
           assignee?: string | null
           created_at?: string
           created_by?: string | null
@@ -414,9 +423,11 @@ export type Database = {
           firm_id: string
           id?: string
           kind?: string
+          shared_with?: string[]
           title: string
         }
         Update: {
+          assigned_role?: string | null
           assignee?: string | null
           created_at?: string
           created_by?: string | null
@@ -426,6 +437,7 @@ export type Database = {
           firm_id?: string
           id?: string
           kind?: string
+          shared_with?: string[]
           title?: string
         }
         Relationships: [
@@ -454,6 +466,7 @@ export type Database = {
       }
       deal_title_items: {
         Row: {
+          assigned_role: string | null
           created_at: string
           created_by: string | null
           deal_id: string
@@ -469,6 +482,7 @@ export type Database = {
           status: string
         }
         Insert: {
+          assigned_role?: string | null
           created_at?: string
           created_by?: string | null
           deal_id: string
@@ -484,6 +498,7 @@ export type Database = {
           status?: string
         }
         Update: {
+          assigned_role?: string | null
           created_at?: string
           created_by?: string | null
           deal_id?: string
@@ -706,6 +721,60 @@ export type Database = {
           style_profile?: string | null
         }
         Relationships: []
+      }
+      item_comments: {
+        Row: {
+          audience: string
+          author_name: string
+          author_party: string | null
+          author_user: string | null
+          body: string
+          created_at: string
+          deal_id: string
+          id: string
+          item_id: string
+          item_type: string
+        }
+        Insert: {
+          audience: string
+          author_name?: string
+          author_party?: string | null
+          author_user?: string | null
+          body: string
+          created_at?: string
+          deal_id: string
+          id?: string
+          item_id: string
+          item_type: string
+        }
+        Update: {
+          audience?: string
+          author_name?: string
+          author_party?: string | null
+          author_user?: string | null
+          body?: string
+          created_at?: string
+          deal_id?: string
+          id?: string
+          item_id?: string
+          item_type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "item_comments_author_party_fkey"
+            columns: ["author_party"]
+            isOneToOne: false
+            referencedRelation: "deal_parties"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "item_comments_deal_id_fkey"
+            columns: ["deal_id"]
+            isOneToOne: false
+            referencedRelation: "deals"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       style_samples: {
         Row: {

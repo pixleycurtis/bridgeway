@@ -35,4 +35,11 @@
 - [x] Shared-with toggles on requests, title items, files, documents; role preview in Share
 - [x] No-login guest links with upload, review task, expiry/revoke, activity log
 - [x] Findings priced in data room/title + reconcile gaps flow into retrade and objection letter
-- [ ] Signed-in account access for outside parties (link-only for now; awaiting user decision)
+- [x] Signed-in account access for outside parties
+
+## Active: Keystone for every party (plan 2026-09-29)
+- [x] Outside parties sign in (or use link); party-only accounts land on My work
+- [x] My work page across deals; assign items/tasks to a party role
+- [x] Item threads (internal + per role) and deal message channels; outside activity on Today
+- [x] Property-type checklists (Multifamily, Industrial, Hospitality, Retail, Office) + hotel metrics
+- [ ] Daily email digest — blocked: needs an email sender domain set up

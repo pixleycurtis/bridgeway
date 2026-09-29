@@ -17,6 +17,7 @@ import { Route as AuthenticatedPortfolioRouteImport } from './routes/_authentica
 import { Route as AuthenticatedSettingsRouteImport } from './routes/_authenticated/settings'
 import { Route as AuthenticatedTodayRouteImport } from './routes/_authenticated/today'
 import { Route as AuthenticatedDealsDealIdRouteImport } from './routes/_authenticated/deals.$dealId'
+import { Route as AuthenticatedDealsDealIdClosingRouteImport } from './routes/_authenticated/deals_.$dealId.closing'
 
 const AuthenticatedRouteRoute = AuthenticatedRouteRouteImport.update({
   id: '/_authenticated',
@@ -58,6 +59,12 @@ const AuthenticatedDealsDealIdRoute =
     path: '/deals/$dealId',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedDealsDealIdClosingRoute =
+  AuthenticatedDealsDealIdClosingRouteImport.update({
+    id: '/deals_/$dealId/closing',
+    path: '/deals/$dealId/closing',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof AuthenticatedIndexRoute
@@ -67,6 +74,7 @@ export interface FileRoutesByFullPath {
   '/settings': typeof AuthenticatedSettingsRoute
   '/today': typeof AuthenticatedTodayRoute
   '/deals/$dealId': typeof AuthenticatedDealsDealIdRoute
+  '/deals/$dealId/closing': typeof AuthenticatedDealsDealIdClosingRoute
 }
 export interface FileRoutesByTo {
   '/auth': typeof AuthRoute
@@ -76,6 +84,7 @@ export interface FileRoutesByTo {
   '/today': typeof AuthenticatedTodayRoute
   '/': typeof AuthenticatedIndexRoute
   '/deals/$dealId': typeof AuthenticatedDealsDealIdRoute
+  '/deals/$dealId/closing': typeof AuthenticatedDealsDealIdClosingRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -87,6 +96,7 @@ export interface FileRoutesById {
   '/_authenticated/today': typeof AuthenticatedTodayRoute
   '/_authenticated/': typeof AuthenticatedIndexRoute
   '/_authenticated/deals/$dealId': typeof AuthenticatedDealsDealIdRoute
+  '/_authenticated/deals_/$dealId/closing': typeof AuthenticatedDealsDealIdClosingRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -98,6 +108,7 @@ export interface FileRouteTypes {
     | '/settings'
     | '/today'
     | '/deals/$dealId'
+    | '/deals/$dealId/closing'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/auth'
@@ -107,6 +118,7 @@ export interface FileRouteTypes {
     | '/today'
     | '/'
     | '/deals/$dealId'
+    | '/deals/$dealId/closing'
   id:
     | '__root__'
     | '/_authenticated'
@@ -117,6 +129,7 @@ export interface FileRouteTypes {
     | '/_authenticated/today'
     | '/_authenticated/'
     | '/_authenticated/deals/$dealId'
+    | '/_authenticated/deals_/$dealId/closing'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -182,6 +195,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedDealsDealIdRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/deals_/$dealId/closing': {
+      id: '/_authenticated/deals_/$dealId/closing'
+      path: '/deals/$dealId/closing'
+      fullPath: '/deals/$dealId/closing'
+      preLoaderRoute: typeof AuthenticatedDealsDealIdClosingRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
   }
 }
 
@@ -192,6 +212,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedTodayRoute: typeof AuthenticatedTodayRoute
   AuthenticatedIndexRoute: typeof AuthenticatedIndexRoute
   AuthenticatedDealsDealIdRoute: typeof AuthenticatedDealsDealIdRoute
+  AuthenticatedDealsDealIdClosingRoute: typeof AuthenticatedDealsDealIdClosingRoute
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
@@ -201,6 +222,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedTodayRoute: AuthenticatedTodayRoute,
   AuthenticatedIndexRoute: AuthenticatedIndexRoute,
   AuthenticatedDealsDealIdRoute: AuthenticatedDealsDealIdRoute,
+  AuthenticatedDealsDealIdClosingRoute: AuthenticatedDealsDealIdClosingRoute,
 }
 
 const AuthenticatedRouteRouteWithChildren =

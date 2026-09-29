@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
+import { Link } from "@tanstack/react-router";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -54,7 +55,7 @@ export function DealSchedule({ deal }: { deal: Deal }) {
   return (
     <div className="grid gap-8 xl:grid-cols-2">
       <div>
-        <h2 className="font-display text-2xl">Key dates</h2>
+        <div className="flex items-baseline justify-between gap-2"><h2 className="font-display text-2xl">Key dates</h2><Link to="/deals/$dealId/closing" params={{ dealId: deal.id }} className="text-sm text-primary hover:underline">Closing checklist →</Link></div>
         {deal.canEdit && (
           <form onSubmit={addDate} className="mt-4 flex flex-wrap gap-2">
             <select value={dateTitle} onChange={(e) => setDateTitle(e.target.value)} className="h-9 rounded-md border bg-card px-2 text-sm">

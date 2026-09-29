@@ -1,4 +1,4 @@
-import { createFileRoute, Outlet, redirect, useLocation } from "@tanstack/react-router";
+import { createFileRoute, Outlet, redirect, useMatches } from "@tanstack/react-router";
 import { supabase } from "@/integrations/supabase/client";
 import { WorkspaceProvider } from "@/lib/workspace";
 import { DealsProvider } from "@/lib/deals-store";
@@ -16,9 +16,11 @@ export const Route = createFileRoute("/_authenticated")({
 
 function Layout() {
   const { user } = Route.useRouteContext();
-  const { pathname } = useLocation();
+  // Decide from the rendered matches (not the URL), so the layout and the page
+  // below it always agree — even mid-navigation between /work and firm pages.
+  const isWork = useMatches({ select: (ms) => ms.some((m) => m.routeId.startsWith("/_authenticated/work")) });
   // Outside parties' pages run without a firm workspace.
-  if (pathname === "/work" || pathname.startsWith("/work/")) return <Outlet />;
+  if (isWork) return <Outlet />;
   return (
     <WorkspaceProvider user={user}>
       <DealsProvider>

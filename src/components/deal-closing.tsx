@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Link } from "@tanstack/react-router";
 import { toast } from "sonner";
 import { useServerFn } from "@tanstack/react-start";
 import { supabase } from "@/integrations/supabase/client";
@@ -141,6 +142,7 @@ export function DealClosing({ deal }: { deal: Deal }) {
         <div className="flex flex-wrap gap-1 border-b">
           {tab("commitment", "Title commitment")}
           {tab("closing", "Closing checklist")}
+          <Link to="/deals/$dealId/closing" params={{ dealId: deal.id }} className="ml-auto self-center px-2 text-sm text-primary hover:underline">Open checklist page →</Link>
         </div>
         {error && <p className="mt-4 text-sm text-destructive">{error} <Button variant="link" size="sm" onClick={() => void reload()}>Retry</Button></p>}
         {deal.canEdit && (

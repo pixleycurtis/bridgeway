@@ -254,7 +254,7 @@ function Underwrite({ deal, set, onNext }: { deal: Deal; set: (p: Partial<Deal>)
                 <label key={f.k} className="flex items-center justify-between gap-3 px-4 py-1.5 text-sm">
                   <span>{f.label}</span>
                   <span className="flex w-36 items-center">
-                    <Num value={f.pct ? +(a[f.k] * 100).toFixed(3) : a[f.k]} onChange={(v) => setA(f.k, f.pct ? v / 100 : v)} />
+                    <Num value={f.pct ? +((a[f.k] ?? 0) * 100).toFixed(3) : a[f.k] ?? 0} onChange={(v) => setA(f.k, f.pct ? v / 100 : v)} />
                     {f.pct && <span className="text-muted-foreground">%</span>}
                   </span>
                 </label>

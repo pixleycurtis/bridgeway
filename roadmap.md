@@ -19,7 +19,7 @@
 - [x] Title / escrow officer as an invited view-only party in Share
 - [x] Data room "Title" category with standard title requests
 - [x] "Closing" stage added to the default pipeline (open stage, before Closed)
-- [ ] Playwright verification of the above
+- [x] Playwright verification of the above (commitment/closing tabs, key dates, stage select, share dialog, objection letter sourcing fixed to commitment items only)
 
 
 ## Active: 6 new buyer-facing sections (user request 2026-09-28)

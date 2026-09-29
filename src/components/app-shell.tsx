@@ -56,7 +56,7 @@ export function AppShell({ children }: { children: ReactNode }) {
   );
 }
 
-function NavItem({ to, children }: { to: "/" | "/today" | "/portfolio" | "/insights" | "/settings"; children: ReactNode }) {
+function NavItem({ to, children }: { to: "/" | "/today" | "/portfolio" | "/insights" | "/settings" | "/work"; children: ReactNode }) {
   return (
     <Link to={to} activeOptions={{ exact: true }}
       className="rounded px-2 py-1.5 text-sidebar-foreground/80 hover:bg-sidebar-accent"

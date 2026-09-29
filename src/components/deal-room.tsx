@@ -190,3 +190,69 @@ export function ShareDialog({ deal }: { deal: Deal }) {
     </Dialog>
   );
 }
+
+/** Assign an item to an outside party's role. Assigning also shares it with that role. */
+export function AssignRole({ value, shared, onChange }: { value: string | null; shared: string[]; onChange: (patch: { assigned_role: string | null; shared_with: string[] }) => void }) {
+  return (
+    <select value={value ?? ""} aria-label="Assign to party" className="rounded border bg-card px-1 py-0.5 text-xs"
+      onChange={(e) => { const r = e.target.value || null; onChange({ assigned_role: r, shared_with: r && !shared.includes(r) ? [...shared, r] : shared }); }}>
+      <option value="">Buyer</option>
+      {PARTY_ROLES.map((r) => <option key={r.value} value={r.value}>{r.label}</option>)}
+    </select>
+  );
+}
+
+type Comment = { id: string; audience: string; author_name: string; body: string; created_at: string; author_party: string | null };
+
+/** Buyer-side thread on an item (or the whole deal): an internal tab plus one tab per party it's shared with. */
+export function ItemThread({ dealId, itemType, itemId, roles }: { dealId: string; itemType: "request" | "title" | "task" | "deal"; itemId: string; roles: string[] }) {
+  const { user, me } = useWorkspace();
+  const tabs = ["internal", ...roles];
+  const [tab, setTab] = useState(tabs[0] ?? "internal");
+  const [rows, setRows] = useState<Comment[]>([]);
+  const [body, setBody] = useState("");
+  const load = async () => {
+    const { data } = await supabase.from("item_comments").select("id, audience, author_name, body, created_at, author_party").eq("item_id", itemId).order("created_at");
+    setRows((data ?? []) as Comment[]);
+  };
+  useEffect(() => { void load(); }, [itemId]); // eslint-disable-line react-hooks/exhaustive-deps
+  const send = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!body.trim()) return;
+    const { error } = await supabase.from("item_comments").insert({ deal_id: dealId, item_type: itemType, item_id: itemId, audience: tab, author_user: user.id, author_name: me?.full_name || user.email || "Buyer", body: body.trim() });
+    if (error) { toast.error(error.message); return; }
+    setBody(""); void load();
+  };
+  const visible = rows.filter((r) => r.audience === tab);
+  return (
+    <div className="mt-2 rounded-md bg-muted/40 p-3">
+      <div className="flex flex-wrap gap-1">
+        {tabs.map((t) => {
+          const n = rows.filter((r) => r.audience === t).length;
+          return <button key={t} type="button" onClick={() => setTab(t)} className={`rounded px-2 py-0.5 text-xs ${tab === t ? "bg-card font-medium shadow-sm" : "text-muted-foreground"}`}>{t === "internal" ? "Internal" : roleLabel(t)}{n ? ` (${n})` : ""}</button>;
+        })}
+      </div>
+      <p className="mt-1 text-[11px] text-muted-foreground">{tab === "internal" ? "Only your firm sees this." : `Visible to the ${roleLabel(tab).toLowerCase()} and your firm.`}</p>
+      <div className="mt-2 space-y-2">
+        {visible.map((r) => <div key={r.id} className="text-sm"><span className="text-xs font-medium">{r.author_name}</span>{r.author_party && <span className="ml-1 text-[10px] uppercase text-primary">outside</span>} <span className="text-xs text-muted-foreground">{new Date(r.created_at).toLocaleString()}</span><p className="whitespace-pre-wrap">{r.body}</p></div>)}
+      </div>
+      <form onSubmit={send} className="mt-2 flex gap-2">
+        <Input value={body} onChange={(e) => setBody(e.target.value)} placeholder={tab === "internal" ? "Internal note…" : `Message the ${roleLabel(tab).toLowerCase()}…`} className="h-8 bg-card text-sm" />
+        <Button type="submit" size="sm">Send</Button>
+      </form>
+    </div>
+  );
+}
+
+/** Deal-level channels: internal plus one per party role. */
+export function MessagesDialog({ deal }: { deal: Deal }) {
+  return (
+    <Dialog>
+      <DialogTrigger asChild><Button variant="outline">Messages</Button></DialogTrigger>
+      <DialogContent className="max-h-[90vh] max-w-xl overflow-y-auto">
+        <DialogHeader><DialogTitle className="font-display text-2xl font-normal">Deal messages</DialogTitle></DialogHeader>
+        <ItemThread dealId={deal.id} itemType="deal" itemId={deal.id} roles={PARTY_ROLES.map((r) => r.value)} />
+      </DialogContent>
+    </Dialog>
+  );
+}

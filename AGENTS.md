@@ -7,3 +7,6 @@
 - Shared deal files use an authenticated server signer after deal and path checks, because storage access stays firm-member-only while invited parties can view the deal.
 - Outside parties access deals only through /room/$token guest links (deal_parties, sha256 token hash, 30-day expiry, revocable); room server functions resolve the token then use the admin client limited to rows whose shared_with contains the party role — the private workspace is never exposed and can_view_deal now equals can_edit_deal.
 - Findings carry an optional impact (annual | onetime | credit) on data room and title items; the retrade includes them as adjustments tagged with source, via finance.ts findingAdjustment/underwritingGaps.
+- Party access has two equal paths — guest token or signed-in verified email matching deal_parties — both resolved in room.functions.ts resolveParty so reads share one role filter; party-only accounts get no firm (ensure_membership returns party_only) and live under /work, rendered outside the firm AppShell.
+- Item threads and deal channels share item_comments (item_type request|title|task|deal, audience internal|role); parties are served only their role's audience via server functions, firm members read all via RLS.
+- Standard request/closing checklists are keyed by property type in src/lib/checklists.ts; hotel metrics are pure helpers in finance.ts.

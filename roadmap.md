@@ -12,6 +12,16 @@
 - [x] Insights: five factors, markets, speed, retrades, pass reasons, property-type filters
 - [x] Firm-defined stages, property types, default targets
 
+## Active: Title & closing (plan 2026-09-29)
+- [x] New "Title & closing" deal step: commitment tracker (Schedule B-I/B-II, objection statuses), closing checklist, key dates
+- [x] AI reads uploaded title commitment PDF into a review-before-apply preview
+- [x] Commitment objection letter document (from tracked exceptions)
+- [x] Title / escrow officer as an invited view-only party in Share
+- [x] Data room "Title" category with standard title requests
+- [x] "Closing" stage added to the default pipeline (open stage, before Closed)
+- [ ] Playwright verification of the above
+
+
 ## Active: 6 new buyer-facing sections (user request 2026-09-28)
 - [x] Fix "Uncaught undefined" / hydration crash blanking preview (not reproducible on fresh load; ErrorComponent hardened in __root.tsx)
 - [x] 1. Deal timeline & tasks (per-deal key dates, assign tasks, overdue on pipeline board)

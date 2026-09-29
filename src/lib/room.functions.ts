@@ -23,7 +23,11 @@ async function resolveParty(token: string) {
 export const getRoom = createServerFn({ method: "POST" })
   .inputValidator((input) => z.object({ token: tokenSchema }).parse(input))
   .handler(async ({ data }) => {
-    const { admin, party, deal } = await resolveParty(data.token);
+    // An expired link is an expected outcome, not a server error: return it as data.
+    let resolved: Awaited<ReturnType<typeof resolveParty>>;
+    try { resolved = await resolveParty(data.token); }
+    catch (e) { return { unavailable: e instanceof Error ? e.message : "This link isn't working" } as const; }
+    const { admin, party, deal } = resolved;
     const role = party.role;
     const [{ data: firm }, dd, title, files, docs] = await Promise.all([
       admin.from("firms").select("name, brand_color, logo_path, contact_name, contact_email").eq("id", deal.firm_id).maybeSingle(),
@@ -37,6 +41,7 @@ export const getRoom = createServerFn({ method: "POST" })
     await admin.from("deal_parties").update({ last_seen_at: new Date().toISOString() }).eq("id", party.id);
     await admin.from("deal_party_events").insert({ party_id: party.id, deal_id: deal.id, kind: "view" });
     return {
+      unavailable: null,
       role, email: party.email, expiresAt: party.expires_at,
       deal: { name: deal.name, address: deal.address },
       firm: { name: firm?.name ?? "", brandColor: firm?.brand_color ?? null, logoUrl, contactName: firm?.contact_name ?? null, contactEmail: firm?.contact_email ?? null },

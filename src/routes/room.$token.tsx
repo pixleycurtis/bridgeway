@@ -21,7 +21,7 @@ export const Route = createFileRoute("/room/$token")({
   component: RoomPage,
 });
 
-type Room = Awaited<ReturnType<typeof getRoom>>;
+type Room = Extract<Awaited<ReturnType<typeof getRoom>>, { unavailable: null }>;
 const ROLE_LABEL: Record<string, string> = { seller: "Seller", title: "Title / escrow", lender: "Lender", counsel: "Counsel" };
 const STATUS_LABEL: Record<string, string> = { open: "Open", objected: "Objected", cleared: "Cleared", accepted: "Accepted", "in-progress": "In progress", done: "Done", received: "Received — in review" };
 
@@ -36,7 +36,7 @@ function RoomPage() {
   const [busy, setBusy] = useState<string | null>(null);
 
   const refresh = useCallback(async () => {
-    try { setRoom(await load({ data: { token } })); setError(null); }
+    try { const r = await load({ data: { token } }); if (r.unavailable) setError(r.unavailable); else { setRoom(r); setError(null); } }
     catch (e) { setError(e instanceof Error ? e.message : "This link isn't working"); }
   }, [load, token]);
   useEffect(() => { void refresh(); }, [refresh]);

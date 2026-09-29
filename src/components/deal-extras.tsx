@@ -118,11 +118,11 @@ export function ShareDialog({ deal }: { deal: Deal }) {
       <DialogTrigger asChild><Button variant="outline">Share</Button></DialogTrigger>
       <DialogContent>
         <DialogHeader><DialogTitle className="font-display text-2xl font-normal">Share with outside parties</DialogTitle></DialogHeader>
-        <p className="text-sm text-muted-foreground">Lenders and sellers get view-only access to this deal and its documents. Everyone at your firm can already see and edit it.</p>
+        <p className="text-sm text-muted-foreground">Lenders, sellers, and title or escrow officers get view-only access to this deal and its documents. Everyone at your firm can already see and edit it.</p>
         <form onSubmit={add} className="flex gap-2">
           <Input placeholder="name@lender.com" value={email} onChange={(e) => setEmail(e.target.value)} />
           <select value={party} onChange={(e) => setParty(e.target.value)} className="rounded-md border bg-card px-2 text-sm">
-            <option value="lender">Lender</option><option value="seller">Seller</option><option value="other">Other</option>
+            <option value="lender">Lender</option><option value="seller">Seller</option><option value="title">Title / escrow officer</option><option value="other">Other</option>
           </select>
           <Button type="submit">Invite</Button>
         </form>

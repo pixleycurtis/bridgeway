@@ -8,7 +8,7 @@ import type { Deal } from "@/lib/deals-store";
 import { useServerFn } from "@tanstack/react-start";
 import { getSharedFileUrl } from "@/lib/deal-files.functions";
 
-const CATEGORIES = ["Financial", "Physical", "Legal & other"];
+const CATEGORIES = ["Financial", "Physical", "Legal & other", "Title"];
 const TEMPLATE: { label: string; category: string }[] = [
   { label: "Trailing-12 operating statement, month by month", category: "Financial" },
   { label: "Current certified rent roll", category: "Financial" },
@@ -21,8 +21,13 @@ const TEMPLATE: { label: string; category: string }[] = [
   { label: "Open work orders and unit turn schedule", category: "Physical" },
   { label: "Service, vendor and management contracts", category: "Legal & other" },
   { label: "Insurance loss runs (5 years)", category: "Legal & other" },
-  { label: "Title policy and survey", category: "Legal & other" },
   { label: "Pending or threatened litigation", category: "Legal & other" },
+  { label: "Title commitment (Schedule B-II review)", category: "Title" },
+  { label: "ALTA/NSPS survey", category: "Title" },
+  { label: "UCC / lien search", category: "Title" },
+  { label: "Closing protection letter", category: "Title" },
+  { label: "Payoff letters for existing loans", category: "Title" },
+  { label: "Tenant estoppels & SNDAs", category: "Title" },
 ];
 
 type FileRow = { id: string; kind: string; name: string; path: string; created_at: string };

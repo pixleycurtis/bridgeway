@@ -17,6 +17,7 @@ export function DocumentsStudio({ deal }: { deal: Deal }) {
   const [kind, setKind] = useState<DocKind>("memo");
   const [saved, setSaved] = useState<Record<string, Section[]>>({});
   const [editing, setEditing] = useState(deal.canEdit);
+  const [titleItems, setTitleItems] = useState<{ item: string; status: string }[]>([]);
   const saveT = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
@@ -25,10 +26,12 @@ export function DocumentsStudio({ deal }: { deal: Deal }) {
       if (f) { setFirm(f); setLogo(await signedLogo(f.logo_path)); }
       const { data } = await supabase.from("deal_documents").select("kind, sections").eq("deal_id", deal.id);
       setSaved(Object.fromEntries((data ?? []).map((d) => [d.kind, d.sections as unknown as Section[]])));
+      const { data: ti } = await supabase.from("deal_title_items").select("item, status").eq("deal_id", deal.id).eq("section", "commitment");
+      setTitleItems((ti ?? []) as { item: string; status: string }[]);
     })();
   }, [deal.id, deal.firmId]);
 
-  const sections = saved[kind] ?? defaultSections(kind, deal, firm);
+  const sections = saved[kind] ?? defaultSections(kind, deal, firm, titleItems);
   const meta = DOC_KINDS.find((d) => d.kind === kind)!;
 
   const persist = (next: Section[]) => {

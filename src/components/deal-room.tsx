@@ -5,6 +5,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import type { Deal } from "@/lib/deals-store";
+import type { Impact } from "@/lib/deal-tables";
+import { usd } from "@/lib/finance";
 import { useWorkspace } from "@/lib/workspace";
 
 export const PARTY_ROLES = [
@@ -29,6 +31,30 @@ export function SharedWith({ value, onChange, disabled }: { value: string[]; onC
           </button>
         );
       })}
+    </span>
+  );
+}
+
+const IMPACT_LABEL: Record<Impact["type"], string> = { annual: "/yr", onetime: " capex", credit: " credit" };
+
+/** Inline editor for a finding's dollar impact on the deal. */
+export function ImpactInput({ value, onChange }: { value: Impact | null; onChange: (v: Impact | null) => void }) {
+  const [open, setOpen] = useState(false);
+  const [type, setType] = useState<Impact["type"]>(value?.type ?? "onetime");
+  const [amount, setAmount] = useState(value ? String(value.amount) : "");
+  if (!open) return (
+    <button type="button" onClick={() => setOpen(true)} className={`text-xs ${value ? "num font-medium text-foreground" : "text-muted-foreground hover:text-foreground"}`}>
+      {value ? `${usd(value.amount)}${IMPACT_LABEL[value.type]}` : "$ impact"}
+    </button>
+  );
+  return (
+    <span className="inline-flex items-center gap-1">
+      <select value={type} onChange={(e) => setType(e.target.value as Impact["type"])} className="rounded border bg-card px-1 py-0.5 text-xs" aria-label="Impact type">
+        <option value="onetime">One-time cost</option><option value="annual">Yearly expense</option><option value="credit">Price credit</option>
+      </select>
+      <input type="number" value={amount} onChange={(e) => setAmount(e.target.value)} className="num w-20 rounded border bg-card px-1 py-0.5 text-xs" placeholder="$" aria-label="Impact amount" />
+      <button type="button" className="text-xs text-primary" onClick={() => { const n = Number(amount); onChange(n > 0 ? { type, amount: n } : null); setOpen(false); }}>Save</button>
+      <button type="button" className="text-xs text-muted-foreground" onClick={() => setOpen(false)}>×</button>
     </span>
   );
 }

@@ -58,6 +58,7 @@ export function WorkspaceProvider({ user, children }: { user: User; children: Re
     (async () => {
       const { data, error } = await supabase.rpc("ensure_membership");
       if (error) { setError(error.message); return; }
+      if ((data as { party_only?: boolean } | null)?.party_only) { window.location.replace("/work"); return; }
       setJustCreated(Boolean((data as { created?: boolean } | null)?.created));
       await refreshFirm();
       setReady(true);

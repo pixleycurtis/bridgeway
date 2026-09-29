@@ -1,4 +1,4 @@
-import { createFileRoute, Outlet, redirect } from "@tanstack/react-router";
+import { createFileRoute, Outlet, redirect, useLocation } from "@tanstack/react-router";
 import { supabase } from "@/integrations/supabase/client";
 import { WorkspaceProvider } from "@/lib/workspace";
 import { DealsProvider } from "@/lib/deals-store";
@@ -16,6 +16,9 @@ export const Route = createFileRoute("/_authenticated")({
 
 function Layout() {
   const { user } = Route.useRouteContext();
+  const { pathname } = useLocation();
+  // Outside parties' pages run without a firm workspace.
+  if (pathname === "/work" || pathname.startsWith("/work/")) return <Outlet />;
   return (
     <WorkspaceProvider user={user}>
       <DealsProvider>

@@ -22,6 +22,7 @@ export function AppShell({ children }: { children: ReactNode }) {
           <NavItem to="/portfolio">Portfolio</NavItem>
           <NavItem to="/insights">Insights</NavItem>
           <NavItem to="/settings">Firm settings</NavItem>
+          <NavItem to="/work">Shared with me</NavItem>
         </nav>
         <div className="mt-8 px-5 text-[11px] uppercase tracking-widest text-sidebar-foreground/50">Active deals</div>
         <nav className="mt-2 flex flex-col gap-0.5 overflow-y-auto px-3 text-sm">

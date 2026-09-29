@@ -74,8 +74,10 @@ export type Database = {
           file_path: string | null
           firm_id: string
           id: string
+          impact: Json | null
           label: string
           received: boolean
+          shared_with: string[]
         }
         Insert: {
           category?: string
@@ -85,8 +87,10 @@ export type Database = {
           file_path?: string | null
           firm_id: string
           id?: string
+          impact?: Json | null
           label: string
           received?: boolean
+          shared_with?: string[]
         }
         Update: {
           category?: string
@@ -96,8 +100,10 @@ export type Database = {
           file_path?: string | null
           firm_id?: string
           id?: string
+          impact?: Json | null
           label?: string
           received?: boolean
+          shared_with?: string[]
         }
         Relationships: [
           {
@@ -122,6 +128,7 @@ export type Database = {
           id: string
           kind: string
           sections: Json
+          shared_with: string[]
           title: string
           updated_at: string
         }
@@ -130,6 +137,7 @@ export type Database = {
           id?: string
           kind: string
           sections?: Json
+          shared_with?: string[]
           title: string
           updated_at?: string
         }
@@ -138,6 +146,7 @@ export type Database = {
           id?: string
           kind?: string
           sections?: Json
+          shared_with?: string[]
           title?: string
           updated_at?: string
         }
@@ -159,6 +168,7 @@ export type Database = {
           kind: string
           name: string
           path: string
+          shared_with: string[]
         }
         Insert: {
           created_at?: string
@@ -167,6 +177,7 @@ export type Database = {
           kind: string
           name: string
           path: string
+          shared_with?: string[]
         }
         Update: {
           created_at?: string
@@ -175,6 +186,7 @@ export type Database = {
           kind?: string
           name?: string
           path?: string
+          shared_with?: string[]
         }
         Relationships: [
           {
@@ -251,6 +263,95 @@ export type Database = {
             columns: ["firm_id"]
             isOneToOne: false
             referencedRelation: "firms"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      deal_parties: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          deal_id: string
+          email: string
+          expires_at: string
+          id: string
+          last_seen_at: string | null
+          revoked_at: string | null
+          role: string
+          token_hash: string | null
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          deal_id: string
+          email: string
+          expires_at?: string
+          id?: string
+          last_seen_at?: string | null
+          revoked_at?: string | null
+          role?: string
+          token_hash?: string | null
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          deal_id?: string
+          email?: string
+          expires_at?: string
+          id?: string
+          last_seen_at?: string | null
+          revoked_at?: string | null
+          role?: string
+          token_hash?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "deal_parties_deal_id_fkey"
+            columns: ["deal_id"]
+            isOneToOne: false
+            referencedRelation: "deals"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      deal_party_events: {
+        Row: {
+          created_at: string
+          deal_id: string
+          detail: string | null
+          id: string
+          kind: string
+          party_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          deal_id: string
+          detail?: string | null
+          id?: string
+          kind: string
+          party_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          deal_id?: string
+          detail?: string | null
+          id?: string
+          kind?: string
+          party_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "deal_party_events_deal_id_fkey"
+            columns: ["deal_id"]
+            isOneToOne: false
+            referencedRelation: "deals"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "deal_party_events_party_id_fkey"
+            columns: ["party_id"]
+            isOneToOne: false
+            referencedRelation: "deal_parties"
             referencedColumns: ["id"]
           },
         ]
@@ -361,8 +462,10 @@ export type Database = {
           file_path: string | null
           firm_id: string
           id: string
+          impact: Json | null
           item: string
           section: string
+          shared_with: string[]
           status: string
         }
         Insert: {
@@ -374,8 +477,10 @@ export type Database = {
           file_path?: string | null
           firm_id: string
           id?: string
+          impact?: Json | null
           item: string
           section?: string
+          shared_with?: string[]
           status?: string
         }
         Update: {
@@ -387,8 +492,10 @@ export type Database = {
           file_path?: string | null
           firm_id?: string
           id?: string
+          impact?: Json | null
           item?: string
           section?: string
+          shared_with?: string[]
           status?: string
         }
         Relationships: [

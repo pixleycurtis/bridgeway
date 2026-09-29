@@ -36,7 +36,7 @@ function RoomPage() {
   const [busy, setBusy] = useState<string | null>(null);
 
   const refresh = useCallback(async () => {
-    try { const r = await load({ data: { token } }); if (r.unavailable) setError(r.unavailable); else { setRoom(r); setError(null); } }
+    try { const r = await load({ data: { token } }); if (r.unavailable) setError(r.unavailable); else { setRoom(r as Room); setError(null); } }
     catch (e) { setError(e instanceof Error ? e.message : "This link isn't working"); }
   }, [load, token]);
   useEffect(() => { void refresh(); }, [refresh]);

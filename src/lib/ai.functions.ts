@@ -120,3 +120,41 @@ export const learnStyle = createServerFn({ method: "POST" })
     await supabase.rpc("set_style_profile", { _profile: profile });
     return { profile };
   });
+
+export const askDeal = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d) => z.object({
+    dealId: z.string().uuid(),
+    question: z.string().min(1).max(4000),
+    history: z.array(z.object({ role: z.enum(["user", "assistant"]), content: z.string().max(8000) })).max(20).default([]),
+  }).parse(d))
+  .handler(async ({ data, context }) => {
+    const { supabase } = context;
+    const [{ data: deal }, { data: dd }, { data: title }, { data: tasks }] = await Promise.all([
+      supabase.from("deals").select("*").eq("id", data.dealId).maybeSingle(),
+      supabase.from("deal_dd_items").select("label, category, received, notes, impact").eq("deal_id", data.dealId),
+      supabase.from("deal_title_items").select("section, item, status, due_date, notes, impact").eq("deal_id", data.dealId),
+      supabase.from("deal_tasks").select("title, due_date, done").eq("deal_id", data.dealId),
+    ]);
+    if (!deal) throw new Error("Deal not found");
+    const a = deal.assumptions as Assumptions;
+    const r = analyze((deal.lines as LineItem[]) ?? [], a, (deal.adjustments as number) ?? 0);
+    const money = (n: number) => "$" + Math.round(n).toLocaleString("en-US");
+    const ctx = `Deal: ${deal.name} — ${deal.address ?? ""} ${deal.market ?? ""} (${deal.property_type}, stage: ${deal.stage})
+Price ${money(a.price)}, ${a.units} units, target IRR ${(deal.target_irr * 100).toFixed(1)}%, loan ${(a.ltv * 100).toFixed(0)}% LTV at ${(a.rate * 100).toFixed(2)}% / ${a.amort}yr am, ${a.ioYears}yr IO, exit cap ${(a.exitCap * 100).toFixed(2)}%, hold ${a.holdYears}yr.
+Underwritten: NOI ${money(r.noi)}, cap rate ${(r.capRate * 100).toFixed(2)}%, DSCR ${r.dscr.toFixed(2)}x, debt service ${money(r.debtService)}, levered IRR ${(r.irr * 100).toFixed(1)}%.
+Lines (broker / T-12 / underwritten, annual):
+${((deal.lines as LineItem[]) ?? []).map((l) => `- ${l.label}: OM ${money(l.om)} / T-12 ${money(l.t12)} / UW ${money(l.uw)}`).join("\n")}
+DD requests:
+${(dd ?? []).map((i) => `- [${i.received ? "received" : "open"}] ${i.label} (${i.category})${i.notes ? ` — ${i.notes}` : ""}${i.impact ? ` — impact: ${JSON.stringify(i.impact)}` : ""}`).join("\n") || "- none"}
+Title & closing items:
+${(title ?? []).map((i) => `- [${i.status}] ${i.item} (${i.section})${i.due_date ? ` due ${i.due_date}` : ""}${i.notes ? ` — ${i.notes}` : ""}`).join("\n") || "- none"}
+Tasks:
+${(tasks ?? []).map((t) => `- [${t.done ? "done" : "open"}] ${t.title}${t.due_date ? ` due ${t.due_date}` : ""}`).join("\n") || "- none"}`;
+    const system = `You are the deal analyst inside Keystone, a buy-side real estate underwriting and diligence tool. Answer questions about the deal below using only this data — never invent numbers. Be concise and specific; cite figures. If the data doesn't contain the answer, say so. Plain text, short paragraphs, "• " bullets for lists.
+
+${ctx}`;
+    const messages = [...data.history.map((m) => ({ role: m.role as "user" | "assistant", content: m.content })), { role: "user" as const, content: data.question }];
+    const text = await runClaude(messages, system);
+    return { answer: text.trim() };
+  });

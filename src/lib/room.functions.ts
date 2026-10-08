@@ -203,6 +203,7 @@ export const listMyDeals = createServerFn({ method: "POST" }).handler(async () =
   const me = await callerEmail(db);
   const { data: parties } = await db.from("deal_parties").select("id, deal_id, role").ilike("email", me.email).is("revoked_at", null);
   await db.from("deal_parties").update({ user_id: me.userId }).ilike("email", me.email).is("user_id", null);
+  const { data: membership } = await db.from("firm_members").select("firm_id").eq("user_id", me.userId).maybeSingle();
   const today = new Date().toISOString().slice(0, 10);
   const out = [];
   for (const p of parties ?? []) {
@@ -221,5 +222,5 @@ export const listMyDeals = createServerFn({ method: "POST" }).handler(async () =
     ].sort((a, b) => (a.due ?? "9999").localeCompare(b.due ?? "9999"));
     out.push({ partyId: p.id, role: p.role, tier: tier.summary, dealName: deal.name, address: deal.address, buyer: (deal.firms as { name: string } | null)?.name ?? "", todo, overdue: todo.filter((t) => t.due && t.due < today).length });
   }
-  return { email: me.email, deals: out };
+  return { email: me.email, hasFirm: Boolean(membership), deals: out };
 });

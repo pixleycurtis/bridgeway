@@ -32,7 +32,10 @@ function MyWork() {
       <header className="border-b bg-card">
         <div className="mx-auto flex max-w-4xl items-center justify-between px-6 py-4">
           <span className="font-display text-xl">Keystone</span>
-          <span className="flex items-center gap-3 text-xs text-muted-foreground">{data?.email}<Button variant="ghost" size="sm" onClick={() => void signOut()}>Sign out</Button></span>
+          <span className="flex items-center gap-3 text-xs text-muted-foreground">
+            {data?.hasFirm && <Link to="/" className="text-sm text-primary hover:underline">← Your workspace</Link>}
+            {data?.email}<Button variant="ghost" size="sm" onClick={() => void signOut()}>Sign out</Button>
+          </span>
         </div>
       </header>
       <main className="mx-auto max-w-4xl px-6 py-10">

@@ -137,14 +137,14 @@ export const askDeal = createServerFn({ method: "POST" })
       supabase.from("deal_tasks").select("title, due_date, done").eq("deal_id", data.dealId),
     ]);
     if (!deal) throw new Error("Deal not found");
-    const a = deal.assumptions as Assumptions;
-    const r = analyze((deal.lines as LineItem[]) ?? [], a, (deal.adjustments as Adjustment[]) ?? []);
+    const a = deal.assumptions as unknown as Assumptions;
+    const r = analyze((deal.lines as unknown as LineItem[]) ?? [], a, (deal.adjustments as unknown as Adjustment[]) ?? []);
     const money = (n: number) => "$" + Math.round(n).toLocaleString("en-US");
     const ctx = `Deal: ${deal.name} — ${deal.address ?? ""} ${deal.market ?? ""} (${deal.property_type}, stage: ${deal.stage})
 Price ${money(a.price)}, ${a.units} units, target IRR ${(deal.target_irr * 100).toFixed(1)}%, loan ${(a.ltv * 100).toFixed(0)}% LTV at ${(a.rate * 100).toFixed(2)}% / ${a.amortYears}yr am, exit cap ${(a.exitCap * 100).toFixed(2)}%, hold ${a.holdYears}yr.
 Underwritten: NOI ${money(r.noi)}, cap rate ${(r.capRate * 100).toFixed(2)}%, DSCR ${r.dscr.toFixed(2)}x, debt service ${money(r.debtService)}, levered IRR ${(r.irr * 100).toFixed(1)}%.
 Lines (broker / T-12 / underwritten, annual):
-${((deal.lines as LineItem[]) ?? []).map((l) => `- ${l.label}: OM ${money(l.broker)} / T-12 ${money(l.t12)} / UW ${money(l.underwrite)}`).join("\n")}
+${((deal.lines as unknown as LineItem[]) ?? []).map((l) => `- ${l.label}: OM ${money(l.broker)} / T-12 ${money(l.t12)} / UW ${money(l.underwrite)}`).join("\n")}
 DD requests:
 ${(dd ?? []).map((i) => `- [${i.received ? "received" : "open"}] ${i.label} (${i.category})${i.impact ? ` — impact: ${JSON.stringify(i.impact)}` : ""}`).join("\n") || "- none"}
 Title & closing items:

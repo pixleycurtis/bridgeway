@@ -1,7 +1,8 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
-import { parseJson, runAI } from "./ai.server";
+import { parseJson, runAI, runClaude } from "./ai.server";
+import { analyze, type Adjustment, type Assumptions, type LineItem } from "./finance";
 
 const LINE_KEYS = {
   gpr: "Gross potential rent (annual)",
@@ -118,4 +119,42 @@ export const learnStyle = createServerFn({ method: "POST" })
       `Combine these writing-style notes from a firm's past documents into one concise house style guide (max 180 words, bullet points, plain text):\n\n${(all ?? []).map((s) => `## ${s.name}\n${s.excerpt}`).join("\n\n")}` }])).trim();
     await supabase.rpc("set_style_profile", { _profile: profile });
     return { profile };
+  });
+
+export const askDeal = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d) => z.object({
+    dealId: z.string().uuid(),
+    question: z.string().min(1).max(4000),
+    history: z.array(z.object({ role: z.enum(["user", "assistant"]), content: z.string().max(8000) })).max(20).default([]),
+  }).parse(d))
+  .handler(async ({ data, context }) => {
+    const { supabase } = context;
+    const [{ data: deal }, { data: dd }, { data: title }, { data: tasks }] = await Promise.all([
+      supabase.from("deals").select("*").eq("id", data.dealId).maybeSingle(),
+      supabase.from("deal_dd_items").select("label, category, received, impact").eq("deal_id", data.dealId),
+      supabase.from("deal_title_items").select("section, item, status, due_date, impact").eq("deal_id", data.dealId),
+      supabase.from("deal_tasks").select("title, due_date, done").eq("deal_id", data.dealId),
+    ]);
+    if (!deal) throw new Error("Deal not found");
+    const a = deal.assumptions as unknown as Assumptions;
+    const r = analyze((deal.lines as unknown as LineItem[]) ?? [], a, (deal.adjustments as unknown as Adjustment[]) ?? []);
+    const money = (n: number) => "$" + Math.round(n).toLocaleString("en-US");
+    const ctx = `Deal: ${deal.name} — ${deal.address ?? ""} ${deal.market ?? ""} (${deal.property_type}, stage: ${deal.stage})
+Price ${money(a.price)}, ${a.units} units, target IRR ${(deal.target_irr * 100).toFixed(1)}%, loan ${(a.ltv * 100).toFixed(0)}% LTV at ${(a.rate * 100).toFixed(2)}% / ${a.amortYears}yr am, exit cap ${(a.exitCap * 100).toFixed(2)}%, hold ${a.holdYears}yr.
+Underwritten: NOI ${money(r.noi)}, cap rate ${(r.capRate * 100).toFixed(2)}%, DSCR ${r.dscr.toFixed(2)}x, debt service ${money(r.debtService)}, levered IRR ${Number.isFinite(r.irr) ? (r.irr * 100).toFixed(1) + "%" : "n/a (no cash flows yet)"}.
+Lines (broker / T-12 / underwritten, annual):
+${((deal.lines as unknown as LineItem[]) ?? []).map((l) => `- ${l.label}: OM ${money(l.broker)} / T-12 ${money(l.t12)} / UW ${money(l.underwrite)}`).join("\n")}
+DD requests:
+${(dd ?? []).map((i) => `- [${i.received ? "received" : "open"}] ${i.label} (${i.category})${i.impact ? ` — impact: ${JSON.stringify(i.impact)}` : ""}`).join("\n") || "- none"}
+Title & closing items:
+${(title ?? []).map((i) => `- [${i.status}] ${i.item} (${i.section})${i.due_date ? ` due ${i.due_date}` : ""}`).join("\n") || "- none"}
+Tasks:
+${(tasks ?? []).map((t) => `- [${t.done ? "done" : "open"}] ${t.title}${t.due_date ? ` due ${t.due_date}` : ""}`).join("\n") || "- none"}`;
+    const system = `You are the deal analyst inside Keystone, a buy-side real estate underwriting and diligence tool. Answer questions about the deal below using only this data — never invent numbers. Be concise and specific; cite figures. If the data doesn't contain the answer, say so. Plain text, short paragraphs, "• " bullets for lists.
+
+${ctx}`;
+    const messages = [...data.history.map((m) => ({ role: m.role as "user" | "assistant", content: m.content })), { role: "user" as const, content: data.question }];
+    const text = await runClaude(messages, system);
+    return { answer: text.replace(/\*\*/g, "").trim() };
   });

@@ -110,7 +110,7 @@ export function RoomView({ access }: { access: RoomAccess }) {
           {"partyId" in access && <Link to="/work" className="text-xs uppercase tracking-widest text-muted-foreground hover:text-foreground">← My work</Link>}
           <h1 className="font-display text-4xl">{room.deal.name}</h1>
           <p className="mt-1 text-sm text-muted-foreground">{room.deal.address}</p>
-          <p className="mt-2 text-xs text-muted-foreground">You can see: {room.tier.toLowerCase()}.</p>
+          <p className="mt-2 text-xs text-muted-foreground">Your access: {room.tier.toLowerCase()}.</p>
         </div>
         {fin && (
           <section>

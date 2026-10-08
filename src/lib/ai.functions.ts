@@ -2,7 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { parseJson, runAI, runClaude } from "./ai.server";
-import { analyze, type Assumptions, type LineItem } from "./finance";
+import { analyze, type Adjustment, type Assumptions, type LineItem } from "./finance";
 
 const LINE_KEYS = {
   gpr: "Gross potential rent (annual)",
@@ -138,13 +138,13 @@ export const askDeal = createServerFn({ method: "POST" })
     ]);
     if (!deal) throw new Error("Deal not found");
     const a = deal.assumptions as Assumptions;
-    const r = analyze((deal.lines as LineItem[]) ?? [], a, (deal.adjustments as number) ?? 0);
+    const r = analyze((deal.lines as LineItem[]) ?? [], a, (deal.adjustments as Adjustment[]) ?? []);
     const money = (n: number) => "$" + Math.round(n).toLocaleString("en-US");
     const ctx = `Deal: ${deal.name} — ${deal.address ?? ""} ${deal.market ?? ""} (${deal.property_type}, stage: ${deal.stage})
-Price ${money(a.price)}, ${a.units} units, target IRR ${(deal.target_irr * 100).toFixed(1)}%, loan ${(a.ltv * 100).toFixed(0)}% LTV at ${(a.rate * 100).toFixed(2)}% / ${a.amort}yr am, ${a.ioYears}yr IO, exit cap ${(a.exitCap * 100).toFixed(2)}%, hold ${a.holdYears}yr.
+Price ${money(a.price)}, ${a.units} units, target IRR ${(deal.target_irr * 100).toFixed(1)}%, loan ${(a.ltv * 100).toFixed(0)}% LTV at ${(a.rate * 100).toFixed(2)}% / ${a.amortYears}yr am, exit cap ${(a.exitCap * 100).toFixed(2)}%, hold ${a.holdYears}yr.
 Underwritten: NOI ${money(r.noi)}, cap rate ${(r.capRate * 100).toFixed(2)}%, DSCR ${r.dscr.toFixed(2)}x, debt service ${money(r.debtService)}, levered IRR ${(r.irr * 100).toFixed(1)}%.
 Lines (broker / T-12 / underwritten, annual):
-${((deal.lines as LineItem[]) ?? []).map((l) => `- ${l.label}: OM ${money(l.om)} / T-12 ${money(l.t12)} / UW ${money(l.uw)}`).join("\n")}
+${((deal.lines as LineItem[]) ?? []).map((l) => `- ${l.label}: OM ${money(l.broker)} / T-12 ${money(l.t12)} / UW ${money(l.underwrite)}`).join("\n")}
 DD requests:
 ${(dd ?? []).map((i) => `- [${i.received ? "received" : "open"}] ${i.label} (${i.category})${i.notes ? ` — ${i.notes}` : ""}${i.impact ? ` — impact: ${JSON.stringify(i.impact)}` : ""}`).join("\n") || "- none"}
 Title & closing items:

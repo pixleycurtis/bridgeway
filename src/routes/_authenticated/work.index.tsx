@@ -45,7 +45,7 @@ function MyWork() {
             <section key={d.partyId} className="rounded-md border bg-card">
               <div className="flex flex-wrap items-baseline justify-between gap-2 border-b px-5 py-4">
                 <div><Link to="/work/$partyId" params={{ partyId: d.partyId }} className="font-display text-2xl hover:underline">{d.dealName}</Link>
-                  <div className="text-xs text-muted-foreground">{d.address} · {d.buyer} · you're the {ROLE_LABEL[d.role]?.toLowerCase()}</div></div>
+                  <div className="text-xs text-muted-foreground">{d.address} · {d.buyer} · you're the {ROLE_LABEL[d.role]?.toLowerCase()} · {d.tier.toLowerCase()}</div></div>
                 <span className="text-xs">{d.overdue > 0 && <span className="mr-3 text-destructive">{d.overdue} overdue</span>}<span className="text-muted-foreground">{d.todo.length} waiting on you</span></span>
               </div>
               <ul className="divide-y text-sm">

@@ -1,3 +1,4 @@
+import { tierFor } from "@/lib/party-tiers";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
@@ -135,6 +136,7 @@ export function ShareDialog({ deal }: { deal: Deal }) {
             {PARTY_ROLES.map((r) => <option key={r.value} value={r.value}>{r.label}</option>)}
           </select>
           <Button type="submit">Create link</Button>
+          <span className="basis-full text-xs text-muted-foreground">{PARTY_ROLES.find((r) => r.value === role)?.label} will see: {tierFor(role).summary.toLowerCase()}.</span>
         </form>
         <ul className="divide-y rounded-md border text-sm">
           {parties.length === 0 && <li className="p-3 text-muted-foreground">No outside parties yet.</li>}

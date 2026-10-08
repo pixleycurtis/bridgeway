@@ -17,12 +17,14 @@ export const Route = createFileRoute("/auth")({
       { name: "twitter:card", content: "summary" },
     ],
   }),
+  validateSearch: (s: Record<string, unknown>): { magic?: boolean | undefined } => ({ magic: s["magic"] === true || s["magic"] === "true" ? true : undefined }),
   component: AuthPage,
 });
 
 function AuthPage() {
   const nav = useNavigate();
-  const [mode, setMode] = useState<"in" | "up">("in");
+  const { magic } = Route.useSearch();
+  const [mode, setMode] = useState<"in" | "up" | "magic">(magic ? "magic" : "in");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [busy, setBusy] = useState(false);
@@ -37,6 +39,12 @@ function AuthPage() {
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
     setBusy(true);
+    if (mode === "magic") {
+      const { error } = await supabase.auth.signInWithOtp({ email, options: { emailRedirectTo: window.location.origin + "/auth" } });
+      setBusy(false);
+      if (error) { toast.error(error.message); return; }
+      setSent(true); return;
+    }
     const { error } = mode === "in"
       ? await supabase.auth.signInWithPassword({ email, password })
       : await supabase.auth.signUp({ email, password, options: { emailRedirectTo: window.location.origin } });
@@ -62,21 +70,24 @@ function AuthPage() {
       </div>
       <div className="flex items-center justify-center p-6">
         <div className="w-full max-w-sm">
-          <h1 className="font-display text-3xl">{mode === "in" ? "Welcome back" : "Create your account"}</h1>
-          <p className="mt-1 text-sm text-muted-foreground">Use your work email — colleagues at the same company share one workspace.</p>
+          <h1 className="font-display text-3xl">{mode === "magic" ? "Sign in with a link" : mode === "in" ? "Welcome back" : "Create your account"}</h1>
+          <p className="mt-1 text-sm text-muted-foreground">{mode === "magic" ? "Invited by a buyer? Enter the email they invited and we'll send you a one-click sign-in link." : "Use your work email — colleagues at the same company share one workspace."}</p>
           {sent ? (
-            <div className="mt-6 rounded-md border bg-card p-4 text-sm">Check <b>{email}</b> for a confirmation link, then come back and sign in.</div>
+            <div className="mt-6 rounded-md border bg-card p-4 text-sm">{mode === "magic" ? <>Check <b>{email}</b> and click the link to sign in.</> : <>Check <b>{email}</b> for a confirmation link, then come back and sign in.</>}</div>
           ) : (
             <>
               <Button variant="outline" className="mt-6 w-full" onClick={google}>Continue with Google</Button>
               <div className="my-4 text-center text-xs text-muted-foreground">or</div>
               <form onSubmit={submit} className="space-y-3">
                 <Input type="email" required placeholder="you@yourfirm.com" value={email} onChange={(e) => setEmail(e.target.value)} />
-                <Input type="password" required minLength={8} placeholder="Password" value={password} onChange={(e) => setPassword(e.target.value)} />
-                <Button type="submit" className="w-full" disabled={busy}>{mode === "in" ? "Sign in" : "Create account"}</Button>
+                {mode !== "magic" && <Input type="password" required minLength={8} placeholder="Password" value={password} onChange={(e) => setPassword(e.target.value)} />}
+                <Button type="submit" className="w-full" disabled={busy}>{mode === "magic" ? "Email me a sign-in link" : mode === "in" ? "Sign in" : "Create account"}</Button>
               </form>
-              <button className="mt-4 text-sm text-muted-foreground hover:text-foreground" onClick={() => setMode(mode === "in" ? "up" : "in")}>
-                {mode === "in" ? "New to Keystone? Create an account" : "Already have an account? Sign in"}
+              <button className="mt-4 block text-sm text-muted-foreground hover:text-foreground" onClick={() => setMode(mode === "magic" ? "in" : "magic")}>
+                {mode === "magic" ? "Use a password instead" : "Email me a sign-in link instead"}
+              </button>
+              <button className="mt-4 text-sm text-muted-foreground hover:text-foreground" onClick={() => setMode(mode === "up" ? "in" : "up")}>
+                {mode !== "up" ? "New to Keystone? Create an account" : "Already have an account? Sign in"}
               </button>
             </>
           )}

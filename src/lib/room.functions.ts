@@ -1,6 +1,8 @@
 import { createServerFn } from "@tanstack/react-start";
 import { getRequest } from "@tanstack/react-start/server";
 import { z } from "zod";
+import { tierFor, type Tier } from "./party-tiers";
+import { analyze, type Assumptions, type LineItem } from "./finance";
 
 // Outside-party endpoints. A caller proves access with EITHER a guest-link token
 // OR a signed-in account whose verified email matches the party invite. Both paths
@@ -16,6 +18,14 @@ async function sha256(value: string) {
   const buf = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(value));
   return Array.from(new Uint8Array(buf)).map((b) => b.toString(16).padStart(2, "0")).join("");
 }
+
+// Row filter for one tier: shared with the role, and (for strict tiers) assigned to it.
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function scope<Q extends { contains: any; eq: any }>(q: Q, role: string, tier: Tier): Q {
+  const shared = q.contains("shared_with", [role]) as Q;
+  return tier.assignedOnly ? (shared.eq("assigned_role", role) as Q) : shared;
+}
+const none = { data: [] as never[] };
 
 async function admin() {
   return (await import("@/integrations/supabase/client.server")).supabaseAdmin;
@@ -58,15 +68,26 @@ export const getRoom = createServerFn({ method: "POST" })
     catch (e) { return { unavailable: e instanceof Error ? e.message : "This link isn't working" } as const; }
     const { db, party, deal } = resolved;
     const role = party.role;
-    const [{ data: firm }, dd, title, tasks, files, docs, comments] = await Promise.all([
+    const tier = tierFor(role);
+    const [{ data: firm }, dd, title, tasks, files, docs, comments, fin] = await Promise.all([
       db.from("firms").select("name, brand_color, logo_path, contact_name, contact_email").eq("id", deal.firm_id).maybeSingle(),
-      db.from("deal_dd_items").select("id, label, category, received, file_path, assigned_role").eq("deal_id", deal.id).contains("shared_with", [role]).order("created_at"),
-      db.from("deal_title_items").select("id, section, item, status, due_date, file_path, assigned_role").eq("deal_id", deal.id).contains("shared_with", [role]).order("created_at"),
-      db.from("deal_tasks").select("id, title, due_date, done, assigned_role").eq("deal_id", deal.id).contains("shared_with", [role]).order("due_date"),
+      tier.requests ? scope(db.from("deal_dd_items").select("id, label, category, received, file_path, assigned_role").eq("deal_id", deal.id), role, tier).order("created_at") : none,
+      tier.titleItems ? scope(db.from("deal_title_items").select("id, section, item, status, due_date, file_path, assigned_role").eq("deal_id", deal.id), role, tier).order("created_at") : none,
+      tier.tasks ? scope(db.from("deal_tasks").select("id, title, due_date, done, assigned_role").eq("deal_id", deal.id), role, tier).order("due_date") : none,
       db.from("deal_files").select("id, name, created_at").eq("deal_id", deal.id).contains("shared_with", [role]).order("created_at", { ascending: false }),
       db.from("deal_documents").select("id, title, sections").eq("deal_id", deal.id).contains("shared_with", [role]),
       db.from("item_comments").select("item_id").eq("deal_id", deal.id).eq("audience", role),
+      tier.financing ? db.from("deals").select("lines, assumptions").eq("id", deal.id).maybeSingle() : Promise.resolve({ data: null }),
     ]);
+    let financing: null | { price: number; loan: number; ltv: number; rate: number; amortYears: number; income: number; expenses: number; noi: number; debtService: number; dscr: number; capRate: number; lines: { label: string; kind: string; amount: number }[] } = null;
+    if (fin.data) {
+      // Buyer's underwriting column only — never broker/T-12 gaps, retrade findings, IRR or other lenders' quotes.
+      const lines = (fin.data.lines as unknown as LineItem[]) ?? [];
+      const a = fin.data.assumptions as unknown as Assumptions;
+      const r = analyze(lines, a);
+      financing = { price: a.price, loan: r.loan, ltv: a.ltv, rate: a.rate, amortYears: a.amortYears, income: r.income, expenses: r.expenses, noi: r.noi, debtService: r.debtService, dscr: r.dscr, capRate: r.capRate,
+        lines: lines.map((l) => ({ label: l.label, kind: l.kind, amount: l.underwrite })) };
+    }
     const counts: Record<string, number> = {};
     for (const c of comments.data ?? []) counts[c.item_id] = (counts[c.item_id] ?? 0) + 1;
     let logoUrl: string | null = null;
@@ -82,6 +103,7 @@ export const getRoom = createServerFn({ method: "POST" })
       titleItems: (title.data ?? []).map((r) => ({ id: r.id, section: r.section, item: r.item, status: r.status, dueDate: r.due_date, hasFile: !!r.file_path, mine: r.assigned_role === role, comments: counts[r.id] ?? 0 })),
       tasks: (tasks.data ?? []).map((t) => ({ id: t.id, title: t.title, dueDate: t.due_date, done: t.done, mine: t.assigned_role === role, comments: counts[t.id] ?? 0 })),
       messages: counts[deal.id] ?? 0,
+      financing, tier: tier.summary,
       files: files.data ?? [],
       documents: (docs.data ?? []).map((d) => ({ id: d.id, title: d.title, sections: (d.sections as { title: string; body: string }[] | null) ?? [] })),
     };
@@ -103,15 +125,19 @@ type ItemType = "request" | "title" | "task" | "deal";
 /** Label of an item only if it is shared with the role (the deal channel is always open to parties). */
 async function sharedItem(db: Admin, type: ItemType, id: string, deal: { id: string; name: string }, role: string) {
   if (type === "deal") return id === deal.id ? { label: deal.name } : null;
+  const tier = tierFor(role);
   if (type === "request") {
-    const { data } = await db.from("deal_dd_items").select("label").eq("id", id).eq("deal_id", deal.id).contains("shared_with", [role]).maybeSingle();
+    if (!tier.requests) return null;
+    const { data } = await scope(db.from("deal_dd_items").select("label").eq("id", id).eq("deal_id", deal.id), role, tier).maybeSingle();
     return data ? { label: data.label } : null;
   }
   if (type === "task") {
-    const { data } = await db.from("deal_tasks").select("title").eq("id", id).eq("deal_id", deal.id).contains("shared_with", [role]).maybeSingle();
+    if (!tier.tasks) return null;
+    const { data } = await scope(db.from("deal_tasks").select("title").eq("id", id).eq("deal_id", deal.id), role, tier).maybeSingle();
     return data ? { label: data.title } : null;
   }
-  const { data } = await db.from("deal_title_items").select("item").eq("id", id).eq("deal_id", deal.id).contains("shared_with", [role]).maybeSingle();
+  if (!tier.titleItems) return null;
+  const { data } = await scope(db.from("deal_title_items").select("item").eq("id", id).eq("deal_id", deal.id), role, tier).maybeSingle();
   return data ? { label: data.item } : null;
 }
 
@@ -180,11 +206,12 @@ export const listMyDeals = createServerFn({ method: "POST" }).handler(async () =
   const today = new Date().toISOString().slice(0, 10);
   const out = [];
   for (const p of parties ?? []) {
+    const tier = tierFor(p.role);
     const [{ data: deal }, dd, title, tasks] = await Promise.all([
       db.from("deals").select("name, address, firm_id, firms(name)").eq("id", p.deal_id).maybeSingle(),
-      db.from("deal_dd_items").select("id, label, received, file_path, assigned_role").eq("deal_id", p.deal_id).contains("shared_with", [p.role]),
-      db.from("deal_title_items").select("id, item, status, due_date, assigned_role").eq("deal_id", p.deal_id).contains("shared_with", [p.role]),
-      db.from("deal_tasks").select("id, title, due_date, done, assigned_role").eq("deal_id", p.deal_id).contains("shared_with", [p.role]),
+      tier.requests ? scope(db.from("deal_dd_items").select("id, label, received, file_path, assigned_role").eq("deal_id", p.deal_id), p.role, tier) : none,
+      tier.titleItems ? scope(db.from("deal_title_items").select("id, item, status, due_date, assigned_role").eq("deal_id", p.deal_id), p.role, tier) : none,
+      tier.tasks ? scope(db.from("deal_tasks").select("id, title, due_date, done, assigned_role").eq("deal_id", p.deal_id), p.role, tier) : none,
     ]);
     if (!deal) continue;
     const todo = [
@@ -192,7 +219,7 @@ export const listMyDeals = createServerFn({ method: "POST" }).handler(async () =
       ...(title.data ?? []).filter((r) => r.assigned_role === p.role && !["cleared", "accepted", "done", "received"].includes(r.status)).map((r) => ({ id: r.id, label: r.item, due: r.due_date })),
       ...(tasks.data ?? []).filter((r) => r.assigned_role === p.role && !r.done).map((r) => ({ id: r.id, label: r.title, due: r.due_date })),
     ].sort((a, b) => (a.due ?? "9999").localeCompare(b.due ?? "9999"));
-    out.push({ partyId: p.id, role: p.role, dealName: deal.name, address: deal.address, buyer: (deal.firms as { name: string } | null)?.name ?? "", todo, overdue: todo.filter((t) => t.due && t.due < today).length });
+    out.push({ partyId: p.id, role: p.role, tier: tier.summary, dealName: deal.name, address: deal.address, buyer: (deal.firms as { name: string } | null)?.name ?? "", todo, overdue: todo.filter((t) => t.due && t.due < today).length });
   }
   return { email: me.email, deals: out };
 });

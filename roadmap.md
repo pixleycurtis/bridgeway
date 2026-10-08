@@ -43,3 +43,6 @@
 - [x] Item threads (internal + per role) and deal message channels; outside activity on Today
 - [x] Property-type checklists (Multifamily, Industrial, Hospitality, Retail, Office) + hotel metrics
 - [ ] Daily email digest — blocked: needs an email sender domain set up
+
+- [x] Strict party tiers + magic-link sign-in for guests
+- [ ] Daily email digest (blocked: needs an email sender on your domain)

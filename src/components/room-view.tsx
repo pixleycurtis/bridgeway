@@ -5,6 +5,7 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
+import { usd, pct } from "@/lib/finance";
 import { getRoom, getRoomFileUrl, startRoomUpload, finishRoomUpload, getRoomThread, postRoomComment } from "@/lib/room.functions";
 
 export type RoomAccess = { token: string } | { partyId: string };
@@ -91,7 +92,8 @@ export function RoomView({ access }: { access: RoomAccess }) {
   const Mine = ({ on }: { on: boolean }) => on ? <span className="ml-2 rounded bg-primary/10 px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wide text-primary">Assigned to you</span> : null;
   const byMine = <T extends { mine: boolean }>(xs: T[]) => [...xs].sort((a, b) => Number(b.mine) - Number(a.mine));
 
-  const empty = !room.requests.length && !room.titleItems.length && !room.tasks.length && !room.files.length && !room.documents.length;
+  const fin = room.financing;
+  const empty = !fin && !room.requests.length && !room.titleItems.length && !room.tasks.length && !room.files.length && !room.documents.length;
   return (
     <div className="min-h-screen" style={room.firm.brandColor ? ({ "--primary": room.firm.brandColor } as React.CSSProperties) : undefined}>
       <header className="border-b bg-card">
@@ -108,7 +110,26 @@ export function RoomView({ access }: { access: RoomAccess }) {
           {"partyId" in access && <Link to="/work" className="text-xs uppercase tracking-widest text-muted-foreground hover:text-foreground">← My work</Link>}
           <h1 className="font-display text-4xl">{room.deal.name}</h1>
           <p className="mt-1 text-sm text-muted-foreground">{room.deal.address}</p>
+          <p className="mt-2 text-xs text-muted-foreground">Your access: {room.tier.toLowerCase()}.</p>
         </div>
+        {fin && (
+          <section>
+            <h2 className="font-display text-2xl">Financing request</h2>
+            <dl className="mt-3 grid grid-cols-2 gap-px overflow-hidden rounded-md border bg-border text-sm sm:grid-cols-4">
+              {([["Purchase price", usd(fin.price)], ["Loan requested", usd(fin.loan)], ["Loan-to-value", pct(fin.ltv)], ["Rate / amortization", `${pct(fin.rate, 2)} · ${fin.amortYears} yrs`],
+                ["Underwritten NOI", usd(fin.noi)], ["Debt service", usd(fin.debtService)], ["DSCR", isFinite(fin.dscr) ? `${fin.dscr.toFixed(2)}x` : "—"], ["Cap rate", pct(fin.capRate, 2)]] as const).map(([k, v]) => (
+                <div key={k} className="bg-card px-4 py-3"><dt className="text-[11px] uppercase tracking-widest text-muted-foreground">{k}</dt><dd className="num mt-1">{v}</dd></div>
+              ))}
+            </dl>
+            <h3 className="mt-6 text-sm font-medium">Underwritten operating statement</h3>
+            <table className="mt-2 w-full rounded-md border bg-card text-sm">
+              <tbody className="divide-y">
+                {fin.lines.map((l, i) => <tr key={i}><td className="px-4 py-2">{l.label}</td><td className="px-4 py-2 text-xs text-muted-foreground">{l.kind === "income" ? "Income" : "Expense"}</td><td className="num px-4 py-2 text-right">{usd(l.amount)}</td></tr>)}
+                <tr className="font-medium"><td className="px-4 py-2">Net operating income</td><td /><td className="num px-4 py-2 text-right">{usd(fin.noi)}</td></tr>
+              </tbody>
+            </table>
+          </section>
+        )}
         {empty && <p className="rounded-md border bg-card p-6 text-sm text-muted-foreground">Nothing has been shared with you yet. You'll see requests here as soon as the buyer adds them.</p>}
         {room.tasks.length > 0 && (
           <section>
@@ -186,7 +207,7 @@ export function RoomView({ access }: { access: RoomAccess }) {
         </section>
         <p className="text-xs text-muted-foreground">
           {"token" in access
-            ? <>Private link for {room.email}, valid until {new Date(room.expiresAt).toLocaleDateString()}. <Link to="/auth" className="underline">Create a free account with this email</Link> to see all your deals in one place.</>
+            ? <>Private link for {room.email}, valid until {new Date(room.expiresAt).toLocaleDateString()}. <Link to="/auth" search={{ magic: true }} className="underline">Get a sign-in link by email</Link> to see all your deals in one place — no password needed.</>
             : null}
           {room.firm.contactEmail ? ` Questions: ${room.firm.contactEmail}` : ""}
         </p>

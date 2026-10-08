@@ -1,7 +1,8 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
-import { parseJson, runAI } from "./ai.server";
+import { parseJson, runAI, runClaude } from "./ai.server";
+import { analyze, type Assumptions, type LineItem } from "./finance";
 
 const LINE_KEYS = {
   gpr: "Gross potential rent (annual)",

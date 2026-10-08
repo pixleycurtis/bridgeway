@@ -142,7 +142,7 @@ export const askDeal = createServerFn({ method: "POST" })
     const money = (n: number) => "$" + Math.round(n).toLocaleString("en-US");
     const ctx = `Deal: ${deal.name} — ${deal.address ?? ""} ${deal.market ?? ""} (${deal.property_type}, stage: ${deal.stage})
 Price ${money(a.price)}, ${a.units} units, target IRR ${(deal.target_irr * 100).toFixed(1)}%, loan ${(a.ltv * 100).toFixed(0)}% LTV at ${(a.rate * 100).toFixed(2)}% / ${a.amortYears}yr am, exit cap ${(a.exitCap * 100).toFixed(2)}%, hold ${a.holdYears}yr.
-Underwritten: NOI ${money(r.noi)}, cap rate ${(r.capRate * 100).toFixed(2)}%, DSCR ${r.dscr.toFixed(2)}x, debt service ${money(r.debtService)}, levered IRR ${(r.irr * 100).toFixed(1)}%.
+Underwritten: NOI ${money(r.noi)}, cap rate ${(r.capRate * 100).toFixed(2)}%, DSCR ${r.dscr.toFixed(2)}x, debt service ${money(r.debtService)}, levered IRR ${Number.isFinite(r.irr) ? (r.irr * 100).toFixed(1) + "%" : "n/a (no cash flows yet)"}.
 Lines (broker / T-12 / underwritten, annual):
 ${((deal.lines as unknown as LineItem[]) ?? []).map((l) => `- ${l.label}: OM ${money(l.broker)} / T-12 ${money(l.t12)} / UW ${money(l.underwrite)}`).join("\n")}
 DD requests:
@@ -156,5 +156,5 @@ ${(tasks ?? []).map((t) => `- [${t.done ? "done" : "open"}] ${t.title}${t.due_da
 ${ctx}`;
     const messages = [...data.history.map((m) => ({ role: m.role as "user" | "assistant", content: m.content })), { role: "user" as const, content: data.question }];
     const text = await runClaude(messages, system);
-    return { answer: text.trim() };
+    return { answer: text.replace(/\*\*/g, "").trim() };
   });

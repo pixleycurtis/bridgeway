@@ -16,6 +16,7 @@ import { LinkedFindings } from "@/components/linked-findings";
 import { MessagesDialog } from "@/components/deal-room";
 import { HotelPanel } from "@/components/hotel-panel";
 import { LenderQuotes } from "@/components/lender-quotes";
+import { DealAsk } from "@/components/deal-ask";
 import { useWorkspace } from "@/lib/workspace";
 import { PASS_REASONS, allStages } from "@/lib/firm-settings";
 import { nextDealAction, useDealActions } from "@/lib/deal-actions";
@@ -44,6 +45,7 @@ const STEPS = [
   { id: "retrade", n: "06", label: "Diligence & retrade" },
   { id: "closing", n: "07", label: "Title & closing" },
   { id: "documents", n: "08", label: "Documents" },
+  { id: "ask", n: "09", label: "Ask AI" },
 ] as const;
 type StepId = (typeof STEPS)[number]["id"];
 
@@ -121,7 +123,7 @@ function DealPage() {
         </nav>
       </div>
       <div className="px-6 py-8 md:px-10">
-        {current === "documents" ? <DocumentsStudio deal={deal} /> : current === "schedule" ? <DealSchedule deal={deal} /> : current === "vault" ? <DealVault deal={deal} /> : current === "financing" ? <LenderQuotes deal={deal} /> : current === "closing" ? <DealClosing deal={deal} /> : (
+        {current === "ask" ? <DealAsk dealId={deal.id} /> : current === "documents" ? <DocumentsStudio deal={deal} /> : current === "schedule" ? <DealSchedule deal={deal} /> : current === "vault" ? <DealVault deal={deal} /> : current === "financing" ? <LenderQuotes deal={deal} /> : current === "closing" ? <DealClosing deal={deal} /> : (
           <fieldset disabled={!deal.canEdit} className="min-w-0">
             {current === "reconcile" && <Reconcile deal={deal} set={set} onNext={() => setStep("underwrite")} />}
             {current === "underwrite" && <Underwrite deal={deal} set={set} onNext={() => setStep("financing")} />}

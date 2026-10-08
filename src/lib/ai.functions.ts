@@ -132,8 +132,8 @@ export const askDeal = createServerFn({ method: "POST" })
     const { supabase } = context;
     const [{ data: deal }, { data: dd }, { data: title }, { data: tasks }] = await Promise.all([
       supabase.from("deals").select("*").eq("id", data.dealId).maybeSingle(),
-      supabase.from("deal_dd_items").select("label, category, received, notes, impact").eq("deal_id", data.dealId),
-      supabase.from("deal_title_items").select("section, item, status, due_date, notes, impact").eq("deal_id", data.dealId),
+      supabase.from("deal_dd_items").select("label, category, received, impact").eq("deal_id", data.dealId),
+      supabase.from("deal_title_items").select("section, item, status, due_date, impact").eq("deal_id", data.dealId),
       supabase.from("deal_tasks").select("title, due_date, done").eq("deal_id", data.dealId),
     ]);
     if (!deal) throw new Error("Deal not found");
@@ -146,9 +146,9 @@ Underwritten: NOI ${money(r.noi)}, cap rate ${(r.capRate * 100).toFixed(2)}%, DS
 Lines (broker / T-12 / underwritten, annual):
 ${((deal.lines as LineItem[]) ?? []).map((l) => `- ${l.label}: OM ${money(l.broker)} / T-12 ${money(l.t12)} / UW ${money(l.underwrite)}`).join("\n")}
 DD requests:
-${(dd ?? []).map((i) => `- [${i.received ? "received" : "open"}] ${i.label} (${i.category})${i.notes ? ` — ${i.notes}` : ""}${i.impact ? ` — impact: ${JSON.stringify(i.impact)}` : ""}`).join("\n") || "- none"}
+${(dd ?? []).map((i) => `- [${i.received ? "received" : "open"}] ${i.label} (${i.category})${i.impact ? ` — impact: ${JSON.stringify(i.impact)}` : ""}`).join("\n") || "- none"}
 Title & closing items:
-${(title ?? []).map((i) => `- [${i.status}] ${i.item} (${i.section})${i.due_date ? ` due ${i.due_date}` : ""}${i.notes ? ` — ${i.notes}` : ""}`).join("\n") || "- none"}
+${(title ?? []).map((i) => `- [${i.status}] ${i.item} (${i.section})${i.due_date ? ` due ${i.due_date}` : ""}`).join("\n") || "- none"}
 Tasks:
 ${(tasks ?? []).map((t) => `- [${t.done ? "done" : "open"}] ${t.title}${t.due_date ? ` due ${t.due_date}` : ""}`).join("\n") || "- none"}`;
     const system = `You are the deal analyst inside Keystone, a buy-side real estate underwriting and diligence tool. Answer questions about the deal below using only this data — never invent numbers. Be concise and specific; cite figures. If the data doesn't contain the answer, say so. Plain text, short paragraphs, "• " bullets for lists.

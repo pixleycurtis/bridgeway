@@ -17,6 +17,7 @@ import { MessagesDialog } from "@/components/deal-room";
 import { HotelPanel } from "@/components/hotel-panel";
 import { LenderQuotes } from "@/components/lender-quotes";
 import { DealAsk } from "@/components/deal-ask";
+import { UnderwriteImport } from "@/components/underwrite-import";
 import { useWorkspace } from "@/lib/workspace";
 import { PASS_REASONS, allStages } from "@/lib/firm-settings";
 import { nextDealAction, useDealActions } from "@/lib/deal-actions";
@@ -248,6 +249,7 @@ function Underwrite({ deal, set, onNext }: { deal: Deal; set: (p: Partial<Deal>)
   return (
     <div className="grid gap-8 xl:grid-cols-[360px_1fr]">
       <div className="space-y-6">
+        {deal.canEdit && <UnderwriteImport deal={deal} set={set} />}
         {groups.map((g) => (
           <div key={g}>
             <div className="text-[11px] uppercase tracking-widest text-muted-foreground">{g}</div>

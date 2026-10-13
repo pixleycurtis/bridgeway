@@ -26,12 +26,12 @@ describe("parseUnderwriteCsv", () => {
     expect(r.targetIrr).toBeCloseTo(0.15);
   });
   it("maps underwritten lines and ignores NOI", () => {
-    expect(r.lines.taxes).toBe(58500);
+    expect(r.lines["taxes"]).toBe(58500);
     expect(r.skipped).not.toContain("Underwritten NOI");
   });
   it("findings section does not overwrite lines", () => {
     expect(r.findings).toHaveLength(2);
     expect(r.findings[1]).toMatchObject({ type: "annual", amount: 14500 });
-    expect(r.lines.taxes).toBe(58500);
+    expect(r.lines["taxes"]).toBe(58500);
   });
 });

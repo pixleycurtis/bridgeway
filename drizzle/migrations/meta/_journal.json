@@ -64,6 +64,13 @@
       "when": 1790715215960,
       "tag": "0008_party_accounts_threads_assignments",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1792104236339,
+      "tag": "0009_underwriting_model_templates",
+      "breakpoints": true
     }
   ]
 }

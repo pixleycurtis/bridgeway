@@ -543,6 +543,7 @@ export type Database = {
           id: string
           lines: Json
           market: string
+          model: Json
           name: string
           pass_reason: string | null
           property_type: string
@@ -563,6 +564,7 @@ export type Database = {
           id?: string
           lines: Json
           market?: string
+          model?: Json
           name: string
           pass_reason?: string | null
           property_type?: string
@@ -583,6 +585,7 @@ export type Database = {
           id?: string
           lines?: Json
           market?: string
+          model?: Json
           name?: string
           pass_reason?: string | null
           property_type?: string
@@ -801,6 +804,44 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "style_samples_firm_id_fkey"
+            columns: ["firm_id"]
+            isOneToOne: false
+            referencedRelation: "firms"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      underwrite_templates: {
+        Row: {
+          config: Json
+          created_at: string
+          created_by: string | null
+          firm_id: string
+          id: string
+          model_type: string
+          name: string
+        }
+        Insert: {
+          config?: Json
+          created_at?: string
+          created_by?: string | null
+          firm_id: string
+          id?: string
+          model_type: string
+          name: string
+        }
+        Update: {
+          config?: Json
+          created_at?: string
+          created_by?: string | null
+          firm_id?: string
+          id?: string
+          model_type?: string
+          name?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "underwrite_templates_firm_id_fkey"
             columns: ["firm_id"]
             isOneToOne: false
             referencedRelation: "firms"

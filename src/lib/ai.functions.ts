@@ -158,3 +158,13 @@ ${ctx}`;
     const text = await runClaude(messages, system);
     return { answer: text.replace(/\*\*/g, "").trim() };
   });
+
+/** Claude's take on which underwriting model fits; facts are the deal's own numbers. */
+export const recommendModel = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d) => z.object({ facts: z.string().max(12_000), options: z.string().max(3000), ruleBased: z.string().max(500) }).parse(d))
+  .handler(async ({ data }) => {
+    const system = `You are a senior acquisitions underwriter. Recommend ONE underwriting model for a prospective property from the options given. Use only the facts provided; never invent numbers. Plain text, no markdown, no asterisks. Format: first line "Model: <exact option label>", then 3-5 short sentences of reasoning citing the facts, then one line "Watch: <the single biggest risk to model carefully>".`;
+    const text = await runClaude([{ role: "user", content: `Options:\n${data.options}\n\nDeal facts:\n${data.facts}\n\nA simple rule check suggested: ${data.ruleBased}` }], system);
+    return { text: text.replace(/\*\*/g, "").trim() };
+  });

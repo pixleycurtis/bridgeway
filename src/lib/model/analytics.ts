@@ -15,8 +15,8 @@ export function distribute(equity: number, annualDistributions: number[], w: Wat
     const t1 = Math.min(left, owed);
     if (owed > 0) { lpGet += t1 * (owedLp / owed); gpGet += t1 * (owedGp / owed); owedLp -= t1 * (owedLp / owed); owedGp -= t1 * (owedGp / owed); }
     left -= t1;
-    lpGet += left * (1 - w.promote) * w.lpShare / (w.lpShare + (1 - w.lpShare));
-    gpGet += left - left * (1 - w.promote) * w.lpShare;
+    lpGet += left * (1 - w.promote) * w.lpShare;
+    gpGet += left * w.promote + left * (1 - w.promote) * (1 - w.lpShare);
     lp.push(lpGet); gp.push(gpGet);
   }
   const sum = (xs: number[]) => xs.slice(1).reduce((s, x) => s + x, 0);

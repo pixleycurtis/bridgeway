@@ -48,7 +48,7 @@ export function runModel(lines: LineItem[], a: Assumptions, model: Model, adj: A
   let rents = units.map((u) => (u.status === "occupied" ? u.rent : 0));
 
   const monthly: MonthRow[] = [];
-  let bal = loan0, rate = loanDef.rate, amort = loanDef.amortYears, io = ioMonthsFor(loanDef, H), ioUntil = io, pmtStart = 1;
+  let bal = loan0, rate = loanDef.rate, amort = loanDef.amortYears, ioUntil = ioMonthsFor(loanDef, H);
   let pmt = amortPayment(bal, rate, amort);
   for (let m = 1; m <= H; m++) {
     const gr = g(a.rentGrowth, m);
@@ -85,17 +85,15 @@ export function runModel(lines: LineItem[], a: Assumptions, model: Model, adj: A
       const trailing = monthly.slice(-11).reduce((s, x) => s + x.noi, noi);
       const newLoan = (trailing / r.valueCap) * r.ltv;
       refi = newLoan - bal;
-      bal = newLoan; rate = r.rate; amort = r.amortYears; ioUntil = 0; pmtStart = m;
+      bal = newLoan; rate = r.rate; amort = r.amortYears; ioUntil = 0;
       pmt = amortPayment(bal, rate, amort);
     }
-    void pmtStart;
     const interest = bal * (rate / 12);
     const payment = m <= ioUntil ? interest : pmt;
     const principal = Math.min(bal, payment - interest);
     bal -= principal;
     const draw = (model.workingCapital?.draws ?? []).filter((d) => d.month === m).reduce((s, d) => s + d.amount, 0);
-    const capex = turnCost ? 0 : 0;
-    monthly.push({ m, gross, vacancy, other, egi, opex, noi, interest, principal, debtService: payment, capex: capex + draw, cashFlow: noi - payment - draw + refi, balance: bal, refi });
+    monthly.push({ m, gross, vacancy, other, egi, opex, noi, interest, principal, debtService: payment, capex: draw, cashFlow: noi - payment - draw + refi, balance: bal, refi });
   }
 
   const last12 = monthly.slice(-12).reduce((s, x) => s + x.noi, 0) * (12 / Math.min(12, monthly.length));

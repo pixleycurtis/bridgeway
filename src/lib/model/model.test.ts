@@ -39,7 +39,7 @@ describe("engine", () => {
     expect(runModel(lines, a, m).equity).toBeCloseTo(300_000 + 20_000);
   });
   it("full interest-only loan gives year-1 debt service = loan × rate", () => {
-    const m = { ...initModel({ lines, assumptions: a, adjustments: [] }), loan: { ...DEFAULT_LOAN, kind: "io" as const, points: 0 } };
+    const m = { ...initModel({ lines, assumptions: a, adjustments: [] }), loan: { ...DEFAULT_LOAN, kind: "io" as const, rate: 0.06, points: 0 } };
     expect(runModel(lines, a, m).debtService).toBeCloseTo(700_000 * 0.06, 0);
   });
   it("turnover costs lost rent: 50% turnover, 1 month down = ~4.2% of gross", () => {

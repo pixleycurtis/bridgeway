@@ -2,7 +2,6 @@ import { useMemo, useState } from "react";
 import { toast } from "sonner";
 import { useServerFn } from "@tanstack/react-start";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import type { Deal } from "@/lib/deals-store";
 import { pct, usd, type Assumptions } from "@/lib/finance";
@@ -637,4 +636,3 @@ export function ModelChooser({ onPick }: { onPick: (id: ModelTypeId) => void }) 
     </div>
   );
 }
-export { Input };

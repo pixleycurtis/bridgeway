@@ -18,6 +18,8 @@ import { HotelPanel } from "@/components/hotel-panel";
 import { LenderQuotes } from "@/components/lender-quotes";
 import { DealAsk } from "@/components/deal-ask";
 import { UnderwriteImport } from "@/components/underwrite-import";
+import { ModelChooser, UnderwriteModel } from "@/components/underwrite-model";
+import { analyzeDeal, hasModel, initModel, solveDealPrice } from "@/lib/model";
 import { useWorkspace } from "@/lib/workspace";
 import { PASS_REASONS, allStages } from "@/lib/firm-settings";
 import { nextDealAction, useDealActions } from "@/lib/deal-actions";
@@ -61,7 +63,7 @@ function DealPage() {
   const { settings } = useWorkspace();
   const { tasks, requests, loading: actionsLoading, error: actionsError, reload: reloadActions } = useDealActions(deal ? [deal] : []);
   if (!deal) return loading ? <div className="p-10 text-sm text-muted-foreground">Loading…</div> : <div className="p-10">Deal not found. <Link to="/" className="underline">Back to pipeline</Link></div>;
-  const r = analyze(deal.lines, deal.assumptions, deal.adjustments);
+  const r = analyzeDeal(deal);
   const set = (p: Partial<Deal>) => { if (deal.canEdit) update(deal.id, p); };
   const current: StepId = STEPS.find((s) => s.id === requestedStep)?.id ?? (deal.canEdit ? "schedule" : "documents");
   const nextStep = STEPS[STEPS.findIndex((s) => s.id === current) + 1];
@@ -240,6 +242,11 @@ const FIELDS: { k: keyof Assumptions; label: string; pct?: boolean; group: strin
 ];
 
 function Underwrite({ deal, set, onNext }: { deal: Deal; set: (p: Partial<Deal>) => void; onNext: () => void }) {
+  if (hasModel(deal)) return <UnderwriteModel deal={deal} set={set} onNext={onNext} />;
+  return <div className="space-y-6">{deal.canEdit && <ModelChooser onPick={(id) => set({ model: initModel(deal, id) })} />}<QuickUnderwrite deal={deal} set={set} onNext={onNext} /></div>;
+}
+
+function QuickUnderwrite({ deal, set, onNext }: { deal: Deal; set: (p: Partial<Deal>) => void; onNext: () => void }) {
   const a = deal.assumptions;
   const r = analyze(deal.lines, a, deal.adjustments);
   const groups = [...new Set(FIELDS.map((f) => f.group))];
@@ -315,10 +322,10 @@ function Retrade({ deal, set, onNext }: { deal: Deal; set: (p: Partial<Deal>) =>
   const [label, setLabel] = useState("");
   const [amount, setAmount] = useState("");
   const [type, setType] = useState<"annual" | "onetime">("onetime");
-  const base = analyze(deal.lines, deal.assumptions, []);
-  const after = analyze(deal.lines, deal.assumptions, deal.adjustments);
+  const base = analyzeDeal(deal, []);
+  const after = analyzeDeal(deal);
   const target = deal.targetIrr;
-  const holdPrice = useMemo(() => solvePrice(deal.lines, deal.assumptions, deal.adjustments, target), [deal, target]);
+  const holdPrice = useMemo(() => solveDealPrice(deal, target), [deal, target]);
   const reduction = Math.max(0, deal.assumptions.price - holdPrice);
   const oneTime = deal.adjustments.filter((a) => a.type === "onetime").reduce((s, a) => s + a.amount, 0);
   const annual = deal.adjustments.filter((a) => a.type === "annual").reduce((s, a) => s + a.amount, 0);

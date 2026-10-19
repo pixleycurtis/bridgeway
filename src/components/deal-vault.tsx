@@ -61,6 +61,17 @@ export function DealVault({ deal }: { deal: Deal }) {
     toast.success("Filed");
   };
 
+  const deleteFile = async (f: FileRow) => {
+    if (!window.confirm(`Delete "${f.name}"? Any request or closing item using it will be marked as not received.`)) return;
+    const { error: delErr } = await supabase.from("deal_files").delete().eq("id", f.id);
+    if (delErr) { toast.error(delErr.message); return; }
+    await supabase.storage.from("deal-files").remove([f.path]);
+    for (const r of rows.filter((r) => r.filePath === f.path)) await update(r.id, { received: false, file_path: null });
+    await supabase.from("deal_title_items").update({ file_path: null }).eq("deal_id", deal.id).eq("file_path", f.path);
+    setFiles((fs) => fs.filter((x) => x.id !== f.id));
+    toast.success("File deleted — upload the new version when it arrives");
+  };
+
   const attachExisting = async (item: DdItem) => {
     if (!selectedFile) return;
     await update(item.id, { received: true, file_path: selectedFile });
@@ -157,7 +168,8 @@ export function DealVault({ deal }: { deal: Deal }) {
             <li key={f.id} className="px-4 py-2.5">
               <Button variant="link" size="sm" className="h-auto max-w-full truncate p-0 text-left" onClick={() => void openFile(f.path)}>{f.name}</Button>
               <div className="flex items-center justify-between gap-2 text-xs text-muted-foreground"><span>{f.kind === "om" ? "Broker OM" : f.kind === "t12" ? "T-12" : f.kind === "guest" ? "From outside party" : "Document"} · {f.created_at.slice(0, 10)}</span>
-                {deal.canEdit && <SharedWith value={f.shared_with ?? []} onChange={async (v) => { const { error } = await supabase.from("deal_files").update({ shared_with: v }).eq("id", f.id); if (error) { toast.error(error.message); return; } setFiles((fs) => fs.map((x) => x.id === f.id ? { ...x, shared_with: v } : x)); }} />}</div>
+                {deal.canEdit && <span className="flex items-center gap-2"><SharedWith value={f.shared_with ?? []} onChange={async (v) => { const { error } = await supabase.from("deal_files").update({ shared_with: v }).eq("id", f.id); if (error) { toast.error(error.message); return; } setFiles((fs) => fs.map((x) => x.id === f.id ? { ...x, shared_with: v } : x)); }} />
+                  <button type="button" className="hover:text-destructive" onClick={() => void deleteFile(f)}>Delete</button></span>}</div>
             </li>
           ))}
         </ul>

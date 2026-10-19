@@ -1,4 +1,5 @@
 import { createServerFn } from "@tanstack/react-start";
+import { analyzeDeal, type Model } from "./model";
 import { getRequest } from "@tanstack/react-start/server";
 import { z } from "zod";
 import { tierFor, type Tier } from "./party-tiers";
@@ -77,15 +78,16 @@ export const getRoom = createServerFn({ method: "POST" })
       db.from("deal_files").select("id, name, created_at").eq("deal_id", deal.id).contains("shared_with", [role]).order("created_at", { ascending: false }),
       db.from("deal_documents").select("id, title, sections").eq("deal_id", deal.id).contains("shared_with", [role]),
       db.from("item_comments").select("item_id").eq("deal_id", deal.id).eq("audience", role),
-      tier.financing ? db.from("deals").select("lines, assumptions").eq("id", deal.id).maybeSingle() : Promise.resolve({ data: null }),
+      tier.financing ? db.from("deals").select("lines, assumptions, model").eq("id", deal.id).maybeSingle() : Promise.resolve({ data: null }),
     ]);
     let financing: null | { price: number; loan: number; ltv: number; rate: number; amortYears: number; income: number; expenses: number; noi: number; debtService: number; dscr: number; capRate: number; lines: { label: string; kind: string; amount: number }[] } = null;
     if (fin.data) {
       // Buyer's underwriting column only — never broker/T-12 gaps, retrade findings, IRR or other lenders' quotes.
       const lines = (fin.data.lines as unknown as LineItem[]) ?? [];
       const a = fin.data.assumptions as unknown as Assumptions;
-      const r = analyze(lines, a);
-      financing = { price: a.price, loan: r.loan, ltv: a.ltv, rate: a.rate, amortYears: a.amortYears, income: r.income, expenses: r.expenses, noi: r.noi, debtService: r.debtService, dscr: r.dscr, capRate: r.capRate,
+      const model = (fin.data.model ?? {}) as unknown as Model;
+      const r = analyzeDeal({ lines, assumptions: a, adjustments: [], model });
+      financing = { price: a.price, loan: r.loan, ltv: model.loan?.ltv ?? a.ltv, rate: model.loan?.rate ?? a.rate, amortYears: model.loan?.amortYears ?? a.amortYears, income: r.income, expenses: r.expenses, noi: r.noi, debtService: r.debtService, dscr: r.dscr, capRate: r.capRate,
         lines: lines.map((l) => ({ label: l.label, kind: l.kind, amount: l.underwrite })) };
     }
     const counts: Record<string, number> = {};

@@ -1,4 +1,5 @@
 import { createServerFn } from "@tanstack/react-start";
+import { analyzeDeal, modelType, type Model } from "./model";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { parseJson, runAI, runClaude } from "./ai.server";
@@ -138,11 +139,13 @@ export const askDeal = createServerFn({ method: "POST" })
     ]);
     if (!deal) throw new Error("Deal not found");
     const a = deal.assumptions as unknown as Assumptions;
-    const r = analyze((deal.lines as unknown as LineItem[]) ?? [], a, (deal.adjustments as unknown as Adjustment[]) ?? []);
+    const model = (deal.model ?? {}) as unknown as Model;
+    const r = analyzeDeal({ lines: (deal.lines as unknown as LineItem[]) ?? [], assumptions: a, adjustments: (deal.adjustments as unknown as Adjustment[]) ?? [], model });
+    const modelLine = model.type ? `Underwriting model: ${modelType(model.type).label}; loan ${model.loan?.kind ?? "amortizing"} ${((model.loan?.ltv ?? a.ltv) * 100).toFixed(0)}% LTV at ${((model.loan?.rate ?? a.rate) * 100).toFixed(2)}%${model.loan?.ioMonths ? `, ${model.loan.ioMonths} mo IO` : ""}${model.loan?.refi ? `, refinance month ${model.loan.refi.month}` : ""}; ${model.units?.length ?? 0} units in rent roll; ${model.comps?.length ?? 0} comps.\n` : "";
     const money = (n: number) => "$" + Math.round(n).toLocaleString("en-US");
     const ctx = `Deal: ${deal.name} — ${deal.address ?? ""} ${deal.market ?? ""} (${deal.property_type}, stage: ${deal.stage})
 Price ${money(a.price)}, ${a.units} units, target IRR ${(deal.target_irr * 100).toFixed(1)}%, loan ${(a.ltv * 100).toFixed(0)}% LTV at ${(a.rate * 100).toFixed(2)}% / ${a.amortYears}yr am, exit cap ${(a.exitCap * 100).toFixed(2)}%, hold ${a.holdYears}yr.
-Underwritten: NOI ${money(r.noi)}, cap rate ${(r.capRate * 100).toFixed(2)}%, DSCR ${r.dscr.toFixed(2)}x, debt service ${money(r.debtService)}, levered IRR ${Number.isFinite(r.irr) ? (r.irr * 100).toFixed(1) + "%" : "n/a (no cash flows yet)"}.
+${modelLine}Underwritten: NOI ${money(r.noi)}, cap rate ${(r.capRate * 100).toFixed(2)}%, DSCR ${r.dscr.toFixed(2)}x, debt service ${money(r.debtService)}, levered IRR ${Number.isFinite(r.irr) ? (r.irr * 100).toFixed(1) + "%" : "n/a (no cash flows yet)"}.
 Lines (broker / T-12 / underwritten, annual):
 ${((deal.lines as unknown as LineItem[]) ?? []).map((l) => `- ${l.label}: OM ${money(l.broker)} / T-12 ${money(l.t12)} / UW ${money(l.underwrite)}`).join("\n")}
 DD requests:

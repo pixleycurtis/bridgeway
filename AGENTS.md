@@ -11,3 +11,5 @@
 - Item threads and deal channels share item_comments (item_type request|title|task|deal, audience internal|role); parties are served only their role's audience via server functions, firm members read all via RLS.
 - Standard request/closing checklists are keyed by property type in src/lib/checklists.ts; hotel metrics are pure helpers in finance.ts.
 - Outside-party permission tiers live in src/lib/party-tiers.ts (seller: assigned DD requests; title: assigned title/closing items; lender: read-only underwriting + financing summary; counsel: shared items) and are enforced in room.functions.ts for every read, thread and upload — one table drives both the server filter and buyer-facing labels.
+- Full underwriting model lives in deals.model (jsonb) and is computed by pure modules in src/lib/model/; every headline consumer calls analyzeDeal, which falls back to finance.ts analyze() when a deal has no model type — keeps old deals and the retrade/lender/AI views consistent.
+- Firm underwriting templates live in underwrite_templates (config = model structure without property data); applyTemplate keeps units, building, comps and accounting.

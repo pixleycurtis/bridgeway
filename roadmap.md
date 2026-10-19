@@ -46,3 +46,8 @@
 
 - [x] Strict party tiers + magic-link sign-in for guests
 - [ ] Daily email digest (blocked: needs an email sender on your domain)
+
+## Active: Underwriting rebuild (plan 2026-10-15)
+- [x] Model engine (monthly → annual), IO/bridge/hard money/refi, DSCR, closing items, opex lines
+- [x] Rent roll + turnover, waterfall + cost tracker, working capital, comps, accounting check, custom fields
+- [x] Model types + rule/Claude recommendation; firm templates; new-deal "enter vs upload" prompt

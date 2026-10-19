@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { analyzeDeal } from "@/lib/model";
 import { useMemo, useState, type ReactNode } from "react";
 import { PageHeader, Stat } from "@/components/app-shell";
 import { useDeals, type Deal } from "@/lib/deals-store";
@@ -24,13 +25,13 @@ const avg = (xs: number[]) => { const v = xs.filter(Number.isFinite); return v.l
 const line = (d: Deal, key: string) => d.lines.find((l) => l.key === key)?.underwrite ?? 0;
 
 function enrich(d: Deal) {
-  const r = analyze(d.lines, d.assumptions, d.adjustments);
+  const r = analyzeDeal(d);
   const a = d.assumptions;
   const gpr = line(d, "gpr");
   const egi = r.income - line(d, "vacancy");
   const opex = r.expenses - line(d, "vacancy");
   const commercial = !/multi|apartment|residential|town/i.test(d.propertyType);
-  const rateUp = analyze(d.lines, { ...a, rate: a.rate + 0.01 }, d.adjustments);
+  const rateUp = analyzeDeal({ ...d, assumptions: { ...a, rate: a.rate + 0.01 }, ...(d.model.loan ? { model: { ...d.model, loan: { ...d.model.loan, rate: d.model.loan.rate + 0.01 } } } : {}) });
   return {
     d, r,
     perUnit: a.price / (a.units || 1),

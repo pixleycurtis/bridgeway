@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import { analyzeDeal } from "@/lib/model";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -15,7 +16,7 @@ export function ActualsEditor({ deal }: { deal: Deal }) {
   const [otherIncome, setOtherIncome] = useState("");
   const [expenses, setExpenses] = useState("");
 
-  const r = analyze(deal.lines, deal.assumptions, deal.adjustments);
+  const r = analyzeDeal(deal);
   const totals = useMemo(() => {
     const rev = rows.reduce((s, a) => s + a.revenue, 0);
     const oth = rows.reduce((s, a) => s + a.otherIncome, 0);

@@ -1,4 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { analyzeDeal } from "@/lib/model";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { PageHeader, Stat } from "@/components/app-shell";
@@ -86,7 +87,7 @@ function Portfolio() {
 }
 
 function ClosedRow({ d, noiToDate, open, onToggle }: { d: Deal; noiToDate: number | null; open: boolean; onToggle: () => void }) {
-  const r = analyze(d.lines, d.assumptions, d.adjustments);
+  const r = analyzeDeal(d);
   const hasActuals = noiToDate != null;
   return (
     <tr className={`border-b last:border-0 hover:bg-muted/60 ${open ? "bg-muted/40" : ""}`}>

@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import { analyzeDeal } from "@/lib/model";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useDealRows, type Quote } from "@/lib/deal-tables";
@@ -9,7 +10,7 @@ const STATUSES = ["quoting", "term sheet", "best execution", "signed", "dropped"
 
 export function LenderQuotes({ deal }: { deal: Deal }) {
   const { rows, add, update, remove } = useDealRows<Quote>("deal_lender_quotes", deal.id);
-  const r = analyze(deal.lines, deal.assumptions, deal.adjustments);
+  const r = analyzeDeal(deal);
   const [f, setF] = useState({ lender: "", program: "", loanAmount: "", rate: "", amortYears: "", ioYears: "", dscrTest: "", feeBps: "", recourse: "Non-recourse" });
   const [status, setStatus] = useState<string>(STATUSES[0] ?? "quoting");
   const live = rows.filter((q) => q.status !== "dropped" && q.status !== "signed");

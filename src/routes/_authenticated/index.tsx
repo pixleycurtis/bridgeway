@@ -1,4 +1,5 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { analyzeDeal } from "@/lib/model";
 import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { PageHeader, Stat, StageBadge } from "@/components/app-shell";
 import { Button } from "@/components/ui/button";
@@ -126,7 +127,7 @@ function Sel({ value, onChange, all, options }: { value: string; onChange: (v: s
 
 function metrics(d: Deal) {
   const b = sumBy(d.lines, "broker").noi;
-  const r = analyze(d.lines, d.assumptions, d.adjustments);
+  const r = analyzeDeal(d);
   return { b, r, gap: r.noi - b, days: daysInStage(d.stageHistory, d.createdAt) };
 }
 

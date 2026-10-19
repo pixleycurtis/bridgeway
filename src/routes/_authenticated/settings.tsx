@@ -12,6 +12,7 @@ import { ACCEPT, readForAI } from "@/lib/files";
 import { learnStyle } from "@/lib/ai.functions";
 import { PipelineSettings } from "@/components/pipeline-settings";
 import { AssumptionsLibrary } from "@/components/assumptions-library";
+import { TemplatesLibrary } from "@/components/templates-library";
 
 export const Route = createFileRoute("/_authenticated/settings")({
   head: () => ({
@@ -32,7 +33,7 @@ function Settings() {
     <div>
       <PageHeader eyebrow="Firm" title="Settings" />
       <div className="grid gap-10 px-6 py-8 md:px-10 xl:grid-cols-2">
-        <div className="space-y-10"><Branding /><PipelineSettings /><AssumptionsLibrary /></div>
+        <div className="space-y-10"><Branding /><PipelineSettings /><AssumptionsLibrary /><TemplatesLibrary /></div>
         <div className="space-y-10"><Team /><WritingStyle /></div>
       </div>
     </div>

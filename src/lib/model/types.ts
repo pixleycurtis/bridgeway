@@ -19,22 +19,22 @@ export interface AccountingRow { id: string; category: string; actual: number; m
 export interface CustomField { id: string; label: string; kind: "usd" | "pct" | "n"; value: number; effect: "none" | "annualExpense" | "annualIncome" | "closingCost" }
 
 export interface Model {
-  type?: ModelTypeId;
-  building?: Record<string, string>;
-  units?: Unit[];
-  vacancyPct?: number;
-  turnover?: Turnover;
-  opex?: OpexItem[];
-  closing?: CostItem[];
-  loan?: Loan;
-  budget?: BudgetItem[];
-  waterfall?: Waterfall;
-  workingCapital?: WorkingCapital;
-  comps?: Comp[];
-  accounting?: AccountingRow[];
-  custom?: CustomField[];
-  hiddenTabs?: string[];
-  templateId?: string | null;
+  type?: ModelTypeId | undefined;
+  building?: Record<string, string> | undefined;
+  units?: Unit[] | undefined;
+  vacancyPct?: number | undefined;
+  turnover?: Turnover | undefined;
+  opex?: OpexItem[] | undefined;
+  closing?: CostItem[] | undefined;
+  loan?: Loan | undefined;
+  budget?: BudgetItem[] | undefined;
+  waterfall?: Waterfall | undefined;
+  workingCapital?: WorkingCapital | undefined;
+  comps?: Comp[] | undefined;
+  accounting?: AccountingRow[] | undefined;
+  custom?: CustomField[] | undefined;
+  hiddenTabs?: string[] | undefined;
+  templateId?: string | null | undefined;
 }
 
 export const uid = () => crypto.randomUUID();

@@ -1,4 +1,7 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { MODEL_TYPES, applyTemplate, seedModel, type ModelTypeId } from "@/lib/model";
+import { useTemplates } from "@/lib/underwrite-templates";
+import { analyzeDeal } from "@/lib/model";
 import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { PageHeader, Stat, StageBadge } from "@/components/app-shell";
 import { Button } from "@/components/ui/button";
@@ -126,7 +129,7 @@ function Sel({ value, onChange, all, options }: { value: string; onChange: (v: s
 
 function metrics(d: Deal) {
   const b = sumBy(d.lines, "broker").noi;
-  const r = analyze(d.lines, d.assumptions, d.adjustments);
+  const r = analyzeDeal(d);
   return { b, r, gap: r.noi - b, days: daysInStage(d.stageHistory, d.createdAt) };
 }
 
@@ -230,10 +233,14 @@ function Board({ deals, stages, stall, taskStats, tasks, requests, onMove }: { d
 function NewDeal() {
   const { create } = useDeals();
   const { settings } = useWorkspace();
+  const { templates } = useTemplates();
   const nav = useNavigate();
   const [name, setName] = useState("");
   const [market, setMarket] = useState("");
   const [type, setType] = useState(settings.propertyTypes[0] ?? "Multifamily");
+  const [mode, setMode] = useState<"manual" | "upload">("manual");
+  const [modelId, setModelId] = useState<ModelTypeId>("stabilized");
+  const [templateId, setTemplateId] = useState("");
   return (
     <Dialog>
       <DialogTrigger asChild><Button>New deal</Button></DialogTrigger>
@@ -242,15 +249,33 @@ function NewDeal() {
         <form className="space-y-3" onSubmit={async (e) => {
           e.preventDefault();
           if (!name.trim()) return;
-          const id = await create(name.trim(), market.trim(), type);
-          if (id) nav({ to: "/deals/$dealId", params: { dealId: id } });
+          const d = settings.defaults;
+          const tpl = templates.find((t) => t.id === templateId);
+          const seed = seedModel(tpl ? (tpl.modelType as ModelTypeId) : modelId, 24, { ltv: d.ltv, rate: d.rate, amortYears: 30 });
+          const model = tpl ? { ...applyTemplate(seed, tpl.config, tpl.modelType), templateId: tpl.id } : seed;
+          const id = await create(name.trim(), market.trim(), type, model);
+          if (id) nav({ to: "/deals/$dealId", params: { dealId: id }, search: { step: mode === "upload" ? "reconcile" : "underwrite" } });
         }}>
+          <div className="grid grid-cols-2 gap-2">
+            {([["manual", "Enter my own data", "Pick a model and fill it in by hand."], ["upload", "Upload data", "Start from the broker OM, T-12 or an underwriting CSV."]] as const).map(([k, t, b]) => (
+              <button key={k} type="button" onClick={() => setMode(k)} aria-pressed={mode === k} className={`rounded border px-3 py-2 text-left text-sm ${mode === k ? "border-primary bg-accent/40" : "hover:border-primary"}`}>
+                <div className="font-medium">{t}</div><div className="text-xs text-muted-foreground">{b}</div>
+              </button>
+            ))}
+          </div>
           <Input placeholder="Property name" value={name} onChange={(e) => setName(e.target.value)} />
           <Input placeholder="Market (e.g. Dayton, OH)" value={market} onChange={(e) => setMarket(e.target.value)} />
-          <select value={type} onChange={(e) => setType(e.target.value)} className="h-10 w-full rounded-md border bg-card px-3 text-sm">
+          <select value={type} onChange={(e) => setType(e.target.value)} className="h-10 w-full rounded-md border bg-card px-3 text-sm" aria-label="Property type">
             {settings.propertyTypes.map((t) => <option key={t}>{t}</option>)}
           </select>
-          <Button type="submit" className="w-full">Create and open</Button>
+          <select value={templateId} onChange={(e) => setTemplateId(e.target.value)} className="h-10 w-full rounded-md border bg-card px-3 text-sm" aria-label="Template">
+            <option value="">No template — choose a model</option>
+            {templates.map((t) => <option key={t.id} value={t.id}>Template: {t.name}</option>)}
+          </select>
+          {!templateId && <select value={modelId} onChange={(e) => setModelId(e.target.value as ModelTypeId)} className="h-10 w-full rounded-md border bg-card px-3 text-sm" aria-label="Underwriting model">
+            {MODEL_TYPES.map((t) => <option key={t.id} value={t.id}>{t.label}</option>)}
+          </select>}
+          <Button type="submit" className="w-full">{mode === "upload" ? "Create and upload files" : "Create and start underwriting"}</Button>
         </form>
       </DialogContent>
     </Dialog>

@@ -1,4 +1,5 @@
 import type { Deal } from "./deals-store";
+import { analyzeDeal } from "./model";
 import { analyze, pct, solvePrice, sumBy, usd } from "./finance";
 import type { Firm } from "./workspace";
 
@@ -20,7 +21,7 @@ const sid = () => Math.random().toString(36).slice(2, 9);
 const s = (title: string, body: string, table: TableKey | null = null): Section => ({ id: sid(), title, body, table });
 
 export function dealFacts(d: Deal) {
-  const r = analyze(d.lines, d.assumptions, d.adjustments);
+  const r = analyzeDeal(d);
   const b = sumBy(d.lines, "broker");
   const t = sumBy(d.lines, "t12");
   const a = d.assumptions;
@@ -36,7 +37,7 @@ export function dealFacts(d: Deal) {
 }
 
 export function defaultSections(kind: DocKind, d: Deal, firm: Firm | null, titleItems: { item: string; status: string; impact?: { type: string; amount: number } | null }[] = []): Section[] {
-  const r = analyze(d.lines, d.assumptions, d.adjustments);
+  const r = analyzeDeal(d);
   const a = d.assumptions;
   const t = sumBy(d.lines, "t12");
   const b = sumBy(d.lines, "broker");
@@ -107,7 +108,7 @@ export function defaultSections(kind: DocKind, d: Deal, firm: Firm | null, title
 
 export function buildTable(key: TableKey, d: Deal): { head: string[]; rows: string[][] } {
   const a = d.assumptions;
-  const r = analyze(d.lines, a, d.adjustments);
+  const r = analyzeDeal({ ...d, assumptions: a });
   switch (key) {
     case "summary":
       return { head: ["", ""], rows: [["Purchase price", usd(a.price)], ["Units", String(a.units)], ["Price / unit", usd(a.price / (a.units || 1))], ["Underwritten NOI", usd(r.noi)], ["Going-in cap rate", pct(r.capRate, 2)], ["Levered IRR", pct(r.irr)]] };
@@ -127,7 +128,7 @@ export function buildTable(key: TableKey, d: Deal): { head: string[]; rows: stri
       const caps = [-0.005, 0, 0.005];
       return {
         head: ["Price \\ Exit cap", ...caps.map((c) => pct(a.exitCap + c, 2))],
-        rows: [0.95, 1, 1.05].map((p) => [usd(a.price * p, true), ...caps.map((c) => pct(analyze(d.lines, { ...a, exitCap: a.exitCap + c }, d.adjustments, a.price * p).irr))]),
+        rows: [0.95, 1, 1.05].map((p) => [usd(a.price * p, true), ...caps.map((c) => pct(analyzeDeal({ ...d, assumptions: { ...a, exitCap: a.exitCap + c } }, d.adjustments, a.price * p).irr))]),
       };
     }
     case "findings":

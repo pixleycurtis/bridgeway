@@ -12,6 +12,7 @@ import {
 import { useTemplates } from "@/lib/underwrite-templates";
 import { recommendModel } from "@/lib/ai.functions";
 import { UnderwriteImport } from "@/components/underwrite-import";
+import { LenderQuotes } from "@/components/lender-quotes";
 
 type SetDeal = (p: Partial<Deal>) => void;
 
@@ -71,7 +72,7 @@ export function UnderwriteModel({ deal, set, onNext }: { deal: Deal; set: SetDea
       {current === "rentroll" && <RentRollTab deal={deal} setM={setM} />}
       {current === "opex" && <OpexTab deal={deal} setM={setM} r={r} />}
       {current === "closing" && <ClosingTab deal={deal} setM={setM} r={r} />}
-      {current === "financing" && <FinancingTab deal={deal} setM={setM} r={r} />}
+      {current === "financing" && <div className="space-y-8"><FinancingTab deal={deal} setM={setM} r={r} /><LenderQuotes deal={deal} /></div>}
       {current === "cashflow" && <CashFlowTab r={r} />}
       {current === "waterfall" && <WaterfallTab deal={deal} setM={setM} r={r} />}
       {current === "wc" && <WorkingCapitalTab deal={deal} setM={setM} r={r} />}
@@ -652,7 +653,7 @@ function SummaryTab({ deal, r, onNext }: { deal: Deal; r: R; onNext: () => void 
         </table>
       </Card>
       <p className="text-xs text-muted-foreground">These numbers drive the deal header, retrade, Ask AI and lender view.</p>
-      <div className="flex justify-end"><Button onClick={onNext}>Continue to financing →</Button></div>
+      <div className="flex justify-end"><Button onClick={onNext}>Continue to diligence →</Button></div>
     </div>
   );
 }

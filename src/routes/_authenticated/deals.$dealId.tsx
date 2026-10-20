@@ -44,11 +44,10 @@ const STEPS = [
   { id: "vault", n: "02", label: "Data room" },
   { id: "reconcile", n: "03", label: "Reconcile" },
   { id: "underwrite", n: "04", label: "Underwrite" },
-  { id: "financing", n: "05", label: "Financing" },
-  { id: "retrade", n: "06", label: "Diligence & retrade" },
-  { id: "closing", n: "07", label: "Title & closing" },
-  { id: "documents", n: "08", label: "Documents" },
-  { id: "ask", n: "09", label: "Ask AI" },
+  { id: "retrade", n: "05", label: "Diligence & retrade" },
+  { id: "closing", n: "06", label: "Title & closing" },
+  { id: "documents", n: "07", label: "Documents" },
+  { id: "ask", n: "08", label: "Ask AI" },
 ] as const;
 type StepId = (typeof STEPS)[number]["id"];
 
@@ -312,7 +311,8 @@ function QuickUnderwrite({ deal, set, onNext }: { deal: Deal; set: (p: Partial<D
             </table>
           </div>
         </div>
-        <div className="flex justify-end"><Button onClick={onNext}>Continue to financing →</Button></div>
+        <LenderQuotes deal={deal} />
+        <div className="flex justify-end"><Button onClick={onNext}>Continue to diligence →</Button></div>
       </div>
     </div>
   );

@@ -44,11 +44,10 @@ const STEPS = [
   { id: "vault", n: "02", label: "Data room" },
   { id: "reconcile", n: "03", label: "Reconcile" },
   { id: "underwrite", n: "04", label: "Underwrite" },
-  { id: "financing", n: "05", label: "Financing" },
-  { id: "retrade", n: "06", label: "Diligence & retrade" },
-  { id: "closing", n: "07", label: "Title & closing" },
-  { id: "documents", n: "08", label: "Documents" },
-  { id: "ask", n: "09", label: "Ask AI" },
+  { id: "retrade", n: "05", label: "Diligence & retrade" },
+  { id: "closing", n: "06", label: "Title & closing" },
+  { id: "documents", n: "07", label: "Documents" },
+  { id: "ask", n: "08", label: "Ask AI" },
 ] as const;
 type StepId = (typeof STEPS)[number]["id"];
 
@@ -65,7 +64,7 @@ function DealPage() {
   if (!deal) return loading ? <div className="p-10 text-sm text-muted-foreground">Loading…</div> : <div className="p-10">Deal not found. <Link to="/" className="underline">Back to pipeline</Link></div>;
   const r = analyzeDeal(deal);
   const set = (p: Partial<Deal>) => { if (deal.canEdit) update(deal.id, p); };
-  const current: StepId = STEPS.find((s) => s.id === requestedStep)?.id ?? (deal.canEdit ? "schedule" : "documents");
+  const current: StepId = STEPS.find((s) => s.id === (requestedStep === "financing" ? "underwrite" : requestedStep))?.id ?? (deal.canEdit ? "schedule" : "documents");
   const nextStep = STEPS[STEPS.findIndex((s) => s.id === current) + 1];
   const { earliest, missing } = nextDealAction(deal.id, tasks, requests);
   const today = new Date().toLocaleDateString("en-CA");
@@ -126,14 +125,14 @@ function DealPage() {
         </nav>
       </div>
       <div className="px-6 py-8 md:px-10">
-        {current === "ask" ? <DealAsk dealId={deal.id} /> : current === "documents" ? <DocumentsStudio deal={deal} /> : current === "schedule" ? <DealSchedule deal={deal} /> : current === "vault" ? <DealVault deal={deal} /> : current === "financing" ? <LenderQuotes deal={deal} /> : current === "closing" ? <DealClosing deal={deal} /> : (
+        {current === "ask" ? <DealAsk dealId={deal.id} /> : current === "documents" ? <DocumentsStudio deal={deal} /> : current === "schedule" ? <DealSchedule deal={deal} /> : current === "vault" ? <DealVault deal={deal} /> : current === "closing" ? <DealClosing deal={deal} /> : (
           <fieldset disabled={!deal.canEdit} className="min-w-0">
             {current === "reconcile" && <Reconcile deal={deal} set={set} onNext={() => setStep("underwrite")} />}
-            {current === "underwrite" && <Underwrite deal={deal} set={set} onNext={() => setStep("financing")} />}
+            {current === "underwrite" && <Underwrite deal={deal} set={set} onNext={() => setStep("retrade")} />}
             {current === "retrade" && <Retrade deal={deal} set={set} onNext={() => setStep("closing")} />}
           </fieldset>
         )}
-        {nextStep && (current === "schedule" || current === "vault" || current === "financing" || current === "closing") && (
+        {nextStep && (current === "schedule" || current === "vault" || current === "closing") && (
           <div className="mt-6 flex justify-end"><Button onClick={() => setStep(nextStep.id)}>Continue to {nextStep.label.toLowerCase()} →</Button></div>
         )}
       </div>
@@ -312,7 +311,8 @@ function QuickUnderwrite({ deal, set, onNext }: { deal: Deal; set: (p: Partial<D
             </table>
           </div>
         </div>
-        <div className="flex justify-end"><Button onClick={onNext}>Continue to financing →</Button></div>
+        <LenderQuotes deal={deal} />
+        <div className="flex justify-end"><Button onClick={onNext}>Continue to diligence →</Button></div>
       </div>
     </div>
   );

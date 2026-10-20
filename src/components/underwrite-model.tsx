@@ -295,7 +295,44 @@ function OpexTab({ deal, setM, r }: TabProps & { r: R }) {
           }}>Use for taxes</Button>
         </div>
       </Card>
+      <div className="lg:col-span-2"><OpexMonthly items={items} units={units} r={r} /></div>
     </div>
+  );
+}
+
+function OpexMonthly({ items, units, r }: { items: OpexItem[]; units: number; r: R }) {
+  const [view, setView] = useState<"monthly" | "annual">("monthly");
+  const months = r.monthly;
+  const amt = (o: OpexItem, m: (typeof months)[number]) =>
+    o.basis === "pctRevenue" ? o.amount * m.egi : ((o.basis === "perUnit" ? o.amount * units : o.amount) / 12) * Math.pow(1 + o.growth, (m.m - 1) / 12);
+  const cols = view === "monthly"
+    ? months.map((m) => ({ label: `M${m.m}`, ms: [m] }))
+    : Array.from({ length: Math.ceil(months.length / 12) }, (_, y) => ({ label: `Yr ${y + 1}`, ms: months.slice(y * 12, y * 12 + 12) }));
+  const val = (o: OpexItem, ms: typeof months) => ms.reduce((s, m) => s + amt(o, m), 0);
+  return (
+    <Card title="Operating expenses by month" action={<Sel value={view} onChange={setView} options={[["monthly", "Monthly"], ["annual", "Annual"]]} />}>
+      <div className="overflow-x-auto">
+        <table className="w-full text-sm">
+          <thead className="border-b text-xs text-muted-foreground"><tr><Th left>Expense</Th>{cols.map((c) => <Th key={c.label}>{c.label}</Th>)}</tr></thead>
+          <tbody>
+            {items.map((o) => (
+              <tr key={o.id} className="border-b">
+                <td className="sticky left-0 whitespace-nowrap bg-card px-2 py-1">{o.label}</td>
+                {cols.map((c) => <td key={c.label} className="num whitespace-nowrap px-2 text-right">{usd(val(o, c.ms), view === "annual")}</td>)}
+              </tr>
+            ))}
+            <tr className="border-b text-muted-foreground">
+              <td className="sticky left-0 whitespace-nowrap bg-card px-2 py-1">Turnover, custom & findings</td>
+              {cols.map((c) => <td key={c.label} className="num whitespace-nowrap px-2 text-right">{usd(c.ms.reduce((s, m) => s + m.opex, 0) - items.reduce((s, o) => s + val(o, c.ms), 0), view === "annual")}</td>)}
+            </tr>
+            <tr className="font-medium">
+              <td className="sticky left-0 whitespace-nowrap bg-card px-2 py-1">Total operating expenses</td>
+              {cols.map((c) => <td key={c.label} className="num whitespace-nowrap px-2 text-right">{usd(c.ms.reduce((s, m) => s + m.opex, 0), view === "annual")}</td>)}
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </Card>
   );
 }
 

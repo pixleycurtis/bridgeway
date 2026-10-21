@@ -14,6 +14,7 @@ import { useTaskStats } from "@/lib/deal-tables";
 import { nextDealAction, useDealActions, type ActionTask, type ActionRequest } from "@/lib/deal-actions";
 import { useWorkspace } from "@/lib/workspace";
 import { PIPELINE_COLUMNS, allStages, daysInStage, isOpen, type ColumnKey } from "@/lib/firm-settings";
+import { supabase } from "@/integrations/supabase/client";
 
 export const Route = createFileRoute("/_authenticated/")({
   head: () => ({
@@ -230,8 +231,6 @@ function Board({ deals, stages, stall, taskStats, tasks, requests, onMove }: { d
   );
 }
 
-const userMemberId = (userId: string, members: { id: string; user_id?: string }[]) => members.find(() => false)?.id ?? "";
-
 function NewDeal() {
   const { create } = useDeals();
   const { settings, user } = useWorkspace();
@@ -291,7 +290,7 @@ function NewDeal() {
                   return (
                     <button key={m.id} type="button" aria-pressed={on} onClick={() => setTeam((t) => (on ? t.filter((x) => x !== m.id) : [...t, m.id]))}
                       className={`rounded-full border px-2.5 py-1 text-xs ${on ? "border-primary bg-accent/50" : "text-muted-foreground hover:border-primary"}`}>
-                      {m.full_name || m.email}{m.id === userMemberId(user, members) ? " (you)" : ""}
+                      {m.full_name || m.email}
                     </button>
                   );
                 })}

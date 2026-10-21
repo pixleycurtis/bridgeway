@@ -233,7 +233,7 @@ function Board({ deals, stages, stall, taskStats, tasks, requests, onMove }: { d
 
 function NewDeal() {
   const { create } = useDeals();
-  const { settings, user } = useWorkspace();
+  const { settings } = useWorkspace();
   const { templates } = useTemplates();
   const nav = useNavigate();
   const [name, setName] = useState("");

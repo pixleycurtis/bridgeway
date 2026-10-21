@@ -59,7 +59,7 @@ const baseA = (price: number, units: number): Assumptions => ({
   rentGrowth: 0.03, expenseGrowth: 0.03, exitCap: 0.065, holdYears: 5, sellPct: 0.02,
 });
 
-type Seed = Omit<Deal, "id" | "firmId" | "canEdit" | "updatedAt" | "stageHistory" | "passReason" | "askingPrice" | "finalPrice" | "createdAt" | "propertyType" | "model"> & { passReason?: string; finalPrice?: number };
+type Seed = Omit<Deal, "id" | "firmId" | "canEdit" | "updatedAt" | "stageHistory" | "passReason" | "askingPrice" | "finalPrice" | "createdAt" | "propertyType" | "model" | "team"> & { passReason?: string; finalPrice?: number };
 const SEED: Seed[] = [
   {
     name: "Maple Court Apartments", address: "1420 Maple Ave", market: "Columbus, OH", stage: "Underwriting", targetIrr: 0.15,

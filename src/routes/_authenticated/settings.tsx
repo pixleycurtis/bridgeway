@@ -102,11 +102,25 @@ function Branding() {
 function Team() {
   const { firm, isAdmin, user } = useWorkspace();
   const [members, setMembers] = useState<Member[]>([]);
+  const [invites, setInvites] = useState<{ id: string; email: string; role: FirmRole }[]>([]);
+  const [inviteEmail, setInviteEmail] = useState("");
+  const [inviteRole, setInviteRole] = useState<FirmRole>("analyst");
   const load = async () => {
     const { data } = await supabase.from("firm_members").select("*").order("created_at");
     setMembers(data ?? []);
+    const { data: inv } = await supabase.from("firm_invites").select("id, email, role").order("created_at");
+    setInvites((inv ?? []) as { id: string; email: string; role: FirmRole }[]);
   };
   useEffect(() => { load(); }, []);
+  const invite = async () => {
+    const email = inviteEmail.trim().toLowerCase();
+    if (!email || !firm) return;
+    const { error } = await supabase.from("firm_invites").insert({ firm_id: firm.id, email, role: inviteRole, invited_by: user.id });
+    if (error) { toast.error(error.message); return; }
+    toast.success(`${email} will join your team when they sign in`);
+    setInviteEmail("");
+    load();
+  };
   const setRole = async (id: string, role: FirmRole) => {
     const { error } = await supabase.from("firm_members").update({ role }).eq("id", id);
     if (error) toast.error(error.message); else load();
@@ -131,8 +145,26 @@ function Team() {
             </div>
           </li>
         ))}
+        {invites.map((i) => (
+          <li key={i.id} className="flex items-center justify-between gap-3 px-4 py-3">
+            <div className="min-w-0"><div className="truncate">{i.email}</div><div className="text-xs text-muted-foreground">Invited — joins when they sign in</div></div>
+            <div className="flex items-center gap-3">
+              <span className="text-xs text-muted-foreground">{ROLE_LABELS[i.role]}</span>
+              {isAdmin && <button className="text-xs text-muted-foreground hover:text-destructive" onClick={async () => { await supabase.from("firm_invites").delete().eq("id", i.id); load(); }}>Withdraw</button>}
+            </div>
+          </li>
+        ))}
       </ul>
-      <p className="mt-2 text-xs text-muted-foreground">Lenders and sellers are invited per deal with the Share button, and can only view.</p>
+      {isAdmin && (
+        <div className="mt-3 flex gap-2">
+          <Input type="email" placeholder="colleague@yourfirm.com" value={inviteEmail} onChange={(e) => setInviteEmail(e.target.value)} className="max-w-xs" />
+          <select value={inviteRole} onChange={(e) => setInviteRole(e.target.value as FirmRole)} className="rounded border bg-card px-2 py-1 text-sm" aria-label="Role">
+            {Object.entries(ROLE_LABELS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
+          </select>
+          <Button variant="outline" onClick={invite}>Add to team</Button>
+        </div>
+      )}
+      <p className="mt-2 text-xs text-muted-foreground">Added teammates join your workspace with that email the first time they sign in. Lenders and sellers are invited per deal with the Share button, and can only view.</p>
     </section>
   );
 }

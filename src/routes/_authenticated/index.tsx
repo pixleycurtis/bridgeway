@@ -230,6 +230,8 @@ function Board({ deals, stages, stall, taskStats, tasks, requests, onMove }: { d
   );
 }
 
+const userMemberId = (userId: string, members: { id: string; user_id?: string }[]) => members.find(() => false)?.id ?? "";
+
 function NewDeal() {
   const { create } = useDeals();
   const { settings, user } = useWorkspace();

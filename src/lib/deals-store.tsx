@@ -32,6 +32,8 @@ export interface Deal {
   model: Model;
   targetIrr: number;
   updatedAt: string;
+  /** firm_members ids assigned to work this deal. */
+  team: string[];
   /** true when the deal belongs to the viewer's firm; false for deals shared in (view-only). */
   canEdit: boolean;
 }
@@ -57,7 +59,7 @@ const baseA = (price: number, units: number): Assumptions => ({
   rentGrowth: 0.03, expenseGrowth: 0.03, exitCap: 0.065, holdYears: 5, sellPct: 0.02,
 });
 
-type Seed = Omit<Deal, "id" | "firmId" | "canEdit" | "updatedAt" | "stageHistory" | "passReason" | "askingPrice" | "finalPrice" | "createdAt" | "propertyType" | "model"> & { passReason?: string; finalPrice?: number };
+type Seed = Omit<Deal, "id" | "firmId" | "canEdit" | "updatedAt" | "stageHistory" | "passReason" | "askingPrice" | "finalPrice" | "createdAt" | "propertyType" | "model" | "team"> & { passReason?: string; finalPrice?: number };
 const SEED: Seed[] = [
   {
     name: "Maple Court Apartments", address: "1420 Maple Ave", market: "Columbus, OH", stage: "Underwriting", targetIrr: 0.15,
@@ -104,14 +106,14 @@ const SEED: Seed[] = [
   },
 ];
 
-type Row = { property_type: string; stage_history: Json; pass_reason: string | null; asking_price: number | null; final_price: number | null; created_at: string; id: string; firm_id: string; name: string; address: string; market: string; stage: string; assumptions: Json; lines: Json; adjustments: Json; model?: Json; target_irr: number; updated_at: string };
+type Row = { team?: string[]; property_type: string; stage_history: Json; pass_reason: string | null; asking_price: number | null; final_price: number | null; created_at: string; id: string; firm_id: string; name: string; address: string; market: string; stage: string; assumptions: Json; lines: Json; adjustments: Json; model?: Json; target_irr: number; updated_at: string };
 const fromRow = (r: Row, myFirm: string | undefined): Deal => ({
   id: r.id, firmId: r.firm_id, name: r.name, address: r.address, market: r.market, stage: r.stage as Stage,
   assumptions: r.assumptions as unknown as Assumptions, lines: r.lines as unknown as LineItem[],
   adjustments: r.adjustments as unknown as Adjustment[], model: (r.model as unknown as Model) ?? {}, targetIrr: Number(r.target_irr),
   propertyType: r.property_type, stageHistory: (r.stage_history as unknown as StageEvent[]) ?? [], passReason: r.pass_reason,
   askingPrice: r.asking_price == null ? null : Number(r.asking_price), finalPrice: r.final_price == null ? null : Number(r.final_price), createdAt: r.created_at,
-  updatedAt: r.updated_at.slice(0, 10), canEdit: r.firm_id === myFirm,
+  updatedAt: r.updated_at.slice(0, 10), canEdit: r.firm_id === myFirm, team: r.team ?? [],
 });
 const toRow = (d: Partial<Deal>) => {
   const o: { [k: string]: unknown } = {};
@@ -129,6 +131,7 @@ const toRow = (d: Partial<Deal>) => {
   if (d.passReason !== undefined) o["pass_reason"] = d.passReason;
   if (d.askingPrice !== undefined) o["asking_price"] = d.askingPrice;
   if (d.finalPrice !== undefined) o["final_price"] = d.finalPrice;
+  if (d.team !== undefined) o["team"] = d.team;
   return o;
 };
 
@@ -136,7 +139,7 @@ interface Ctx {
   deals: Deal[];
   loading: boolean;
   update: (id: string, patch: Partial<Deal>) => void;
-  create: (name: string, market: string, propertyType?: string, model?: Model) => Promise<string | null>;
+  create: (name: string, market: string, propertyType?: string, model?: Model, team?: string[]) => Promise<string | null>;
 }
 const g = globalThis as unknown as { __keystoneDealsCtx2?: React.Context<Ctx | null> };
 const DealsCtx = (g.__keystoneDealsCtx2 ??= createContext<Ctx | null>(null));
@@ -181,7 +184,7 @@ export function DealsProvider({ children }: { children: ReactNode }) {
     };
   };
 
-  const create = async (name: string, market: string, propertyType?: string, model?: Model) => {
+  const create = async (name: string, market: string, propertyType?: string, model?: Model, team?: string[]) => {
     if (!firm) return null;
     const first = settings.stages[0] ?? "Screening";
     const d = settings.defaults;
@@ -205,7 +208,7 @@ export function DealsProvider({ children }: { children: ReactNode }) {
         holdYears: pref?.defaults?.holdYears ?? d.holdYears,
       },
       lines: lines(Array(10).fill(0), Array(10).fill(0), Array(10).fill(0)), adjustments: [],
-      model: model ?? {},
+      model: model ?? {}, team: team ?? [],
     };
     const { data, error } = await supabase.from("deals").insert(row as never).select().single();
     if (error || !data) { toast.error(error?.message ?? "Couldn't create deal"); return null; }

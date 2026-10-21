@@ -232,7 +232,7 @@ function Board({ deals, stages, stall, taskStats, tasks, requests, onMove }: { d
 
 function NewDeal() {
   const { create } = useDeals();
-  const { settings } = useWorkspace();
+  const { settings, user } = useWorkspace();
   const { templates } = useTemplates();
   const nav = useNavigate();
   const [name, setName] = useState("");
@@ -241,6 +241,11 @@ function NewDeal() {
   const [mode, setMode] = useState<"manual" | "upload">("manual");
   const [modelId, setModelId] = useState<ModelTypeId>("stabilized");
   const [templateId, setTemplateId] = useState("");
+  const [members, setMembers] = useState<{ id: string; full_name: string | null; email: string }[]>([]);
+  const [team, setTeam] = useState<string[]>([]);
+  useEffect(() => {
+    void supabase.from("firm_members").select("id, full_name, email").order("created_at").then(({ data }) => setMembers(data ?? []));
+  }, []);
   return (
     <Dialog>
       <DialogTrigger asChild><Button>New deal</Button></DialogTrigger>
@@ -253,7 +258,7 @@ function NewDeal() {
           const tpl = templates.find((t) => t.id === templateId);
           const seed = seedModel(tpl ? (tpl.modelType as ModelTypeId) : modelId, 24, { ltv: d.ltv, rate: d.rate, amortYears: 30 });
           const model = tpl ? { ...applyTemplate(seed, tpl.config, tpl.modelType), templateId: tpl.id } : seed;
-          const id = await create(name.trim(), market.trim(), type, model);
+          const id = await create(name.trim(), market.trim(), type, model, team);
           if (id) nav({ to: "/deals/$dealId", params: { dealId: id }, search: { step: mode === "upload" ? "reconcile" : "underwrite" } });
         }}>
           <div className="grid grid-cols-2 gap-2">
@@ -275,6 +280,22 @@ function NewDeal() {
           {!templateId && <select value={modelId} onChange={(e) => setModelId(e.target.value as ModelTypeId)} className="h-10 w-full rounded-md border bg-card px-3 text-sm" aria-label="Underwriting model">
             {MODEL_TYPES.map((t) => <option key={t.id} value={t.id}>{t.label}</option>)}
           </select>}
+          {members.length > 0 && (
+            <fieldset>
+              <legend className="mb-1 text-xs text-muted-foreground">Team on this deal</legend>
+              <div className="flex flex-wrap gap-1.5">
+                {members.map((m) => {
+                  const on = team.includes(m.id);
+                  return (
+                    <button key={m.id} type="button" aria-pressed={on} onClick={() => setTeam((t) => (on ? t.filter((x) => x !== m.id) : [...t, m.id]))}
+                      className={`rounded-full border px-2.5 py-1 text-xs ${on ? "border-primary bg-accent/50" : "text-muted-foreground hover:border-primary"}`}>
+                      {m.full_name || m.email}{m.id === userMemberId(user, members) ? " (you)" : ""}
+                    </button>
+                  );
+                })}
+              </div>
+            </fieldset>
+          )}
           <Button type="submit" className="w-full">{mode === "upload" ? "Create and upload files" : "Create and start underwriting"}</Button>
         </form>
       </DialogContent>

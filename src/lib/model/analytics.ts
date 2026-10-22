@@ -55,7 +55,8 @@ export function accountingCheck(rows: AccountingRow[], lines: LineItem[], thresh
 /** What a template carries from a deal's model: structure, not property-specific numbers. */
 export function templateConfig(m: Model): Model {
   return { opex: m.opex?.map((o) => ({ ...o, amount: o.basis === "fixed" ? 0 : o.amount })), closing: m.closing, loan: m.loan, turnover: m.turnover, vacancyPct: m.vacancyPct,
-    waterfall: m.waterfall, custom: m.custom?.map((c) => ({ ...c })), hiddenTabs: m.hiddenTabs, workingCapital: m.workingCapital ? { ...m.workingCapital, draws: [] } : undefined };
+    waterfall: m.waterfall, custom: m.custom?.map((c) => ({ ...c })), hiddenTabs: m.hiddenTabs, workingCapital: m.workingCapital ? { ...m.workingCapital, draws: [] } : undefined,
+    layout: m.layout, order: m.order, customRows: m.customRows };
 }
 /** Apply a template on top of a deal's model, keeping the property's own data (units, building, comps, accounting). */
 export function applyTemplate(m: Model, cfg: Model, type: string): Model {

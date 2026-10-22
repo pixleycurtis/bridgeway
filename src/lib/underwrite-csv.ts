@@ -103,3 +103,26 @@ export function parseUnderwriteCsv(text: string): UnderwriteImport {
   }
   return out;
 }
+
+/** Every labelled value in a CSV (first non-empty cell after the label), plus an optional findings section. */
+export function extractRows(text: string): { rows: { label: string; raw: string }[]; findings: Adjustment[] } {
+  const rows: { label: string; raw: string }[] = [];
+  const findings: Adjustment[] = [];
+  let inFindings = false;
+  for (const rawLine of text.split(/\r?\n/)) {
+    const row = cells(rawLine);
+    const label = (row[0] ?? "").trim();
+    if (!label) continue;
+    const key = label.toLowerCase();
+    if (/finding/.test(key) && row.slice(1).some((c) => /type|amount/i.test(c))) { inFindings = true; continue; }
+    if (inFindings) {
+      const amt = num(row[2] ?? "");
+      if (amt) findings.push({ id: crypto.randomUUID(), label, type: /annual|year/i.test(row[1] ?? "") ? "annual" : "onetime", amount: Math.round(Math.abs(amt.value)) });
+      continue;
+    }
+    const raw = row.slice(1).find((c) => c.trim() !== "") ?? "";
+    if (!raw || /^(value|amount|annual|notes?|\$|\(\$\)|annual \(\$\))$/i.test(raw)) continue;
+    rows.push({ label, raw });
+  }
+  return { rows, findings };
+}

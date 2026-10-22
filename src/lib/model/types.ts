@@ -35,6 +35,15 @@ export interface Model {
   custom?: CustomField[] | undefined;
   hiddenTabs?: string[] | undefined;
   templateId?: string | null | undefined;
+  /** Analyst row preferences keyed by row id (e.g. "b.yearBuilt", "a.price"): renamed label, hidden, note. Display only. */
+  layout?: Record<string, RowPref> | undefined;
+  /** Row order per section (row ids). */
+  order?: Record<string, string[]> | undefined;
+  /** Analyst-added text rows per section. */
+  customRows?: Record<string, { id: string; label: string }[]> | undefined;
+  /** Where an imported value came from, keyed by row id. */
+  sources?: Record<string, string> | undefined;
 }
+export interface RowPref { label?: string | undefined; hidden?: boolean | undefined; note?: string | undefined }
 
 export const uid = () => crypto.randomUUID();

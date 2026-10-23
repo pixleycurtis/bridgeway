@@ -45,7 +45,7 @@ export function applyMapped(d: DealParts, rows: Mapped[], fields: FieldDef[], fi
     if (r.dest === "skip") continue;
     if (r.dest.startsWith("new.")) {
       const id = crypto.randomUUID();
-      if (r.dest === "new.building") { m.customRows!.building = [...(m.customRows!.building ?? []), { id, label: r.label }]; m.building![id] = r.raw; src(`b.${id}`, r.label); continue; }
+      if (r.dest === "new.building") { m.customRows!["building"] = [...(m.customRows!["building"] ?? []), { id, label: r.label }]; m.building![id] = r.raw; src(`b.${id}`, r.label); continue; }
       const v = toNumber(r.raw, "usd");
       if (v == null) continue;
       if (r.dest === "new.opex") { m.opex!.push({ id, label: r.label, basis: "fixed", amount: Math.abs(v), growth: a.expenseGrowth }); src(`opex:${id}`, r.label); }

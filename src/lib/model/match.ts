@@ -47,7 +47,7 @@ export function catalogFor(model: Model | undefined, full: boolean): FieldDef[] 
   });
   if (!full) return base;
   const extra: FieldDef[] = [
-    ...(model?.customRows?.building ?? []).map((r) => ({ id: `b.${r.id}`, label: r.label, section: "Building" as const, kind: "text" as const, syn: [] })),
+    ...(model?.customRows?.["building"] ?? []).map((r) => ({ id: `b.${r.id}`, label: r.label, section: "Building" as const, kind: "text" as const, syn: [] })),
     ...(model?.custom ?? []).map((c) => ({ id: `custom.${c.id}`, label: c.label, section: "Custom" as const, kind: c.kind, syn: [] })),
   ];
   const known = new Set(base.flatMap((x) => [x.label, ...x.syn].map(normalize)));

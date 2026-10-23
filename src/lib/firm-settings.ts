@@ -29,6 +29,8 @@ export interface FirmSettings {
   flagThreshold: number;
   stallDays: number;
   defaults: { ltv: number; rate: number; exitCap: number; holdYears: number };
+  /** Firm-confirmed upload terms: normalized file label → field id (or "skip"). */
+  terms: Record<string, string>;
 }
 
 export const DEFAULT_SETTINGS: FirmSettings = {
@@ -39,6 +41,7 @@ export const DEFAULT_SETTINGS: FirmSettings = {
   flagThreshold: 0.1,
   stallDays: 30,
   defaults: { ltv: 0.7, rate: 0.0675, exitCap: 0.065, holdYears: 5 },
+  terms: {},
 };
 
 /** Firms configured before "Closing" existed get it inserted after "Under contract". */
@@ -57,6 +60,7 @@ export function readSettings(raw: Json | null | undefined): FirmSettings {
     propertyTypes: s.propertyTypes?.length ? s.propertyTypes : DEFAULT_TYPES,
     columns: s.columns?.length ? s.columns : DEFAULT_SETTINGS.columns,
     defaults: { ...DEFAULT_SETTINGS.defaults, ...(s.defaults ?? {}) },
+    terms: s.terms && typeof s.terms === "object" ? s.terms : {},
   };
 }
 

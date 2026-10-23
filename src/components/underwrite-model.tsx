@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { createContext, useContext, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { useServerFn } from "@tanstack/react-start";
 import { Button } from "@/components/ui/button";
@@ -7,7 +7,7 @@ import type { Deal } from "@/lib/deals-store";
 import { pct, usd, type Assumptions } from "@/lib/finance";
 import {
   ALL_TABS, MODEL_TYPES, TAB_LABELS, accountingCheck, applyTemplate, compStats, distribute, modelType, recommendType, runModel, templateConfig, uid, workingCapitalTrack,
-  type Comp, type CostItem, type CustomField, type Loan, type LoanKind, type Model, type ModelTypeId, type OpexItem, type TabId, type Unit,
+  type Comp, type CostItem, type RowPref, type CustomField, type Loan, type LoanKind, type Model, type ModelTypeId, type OpexItem, type TabId, type Unit,
 } from "@/lib/model";
 import { useTemplates } from "@/lib/underwrite-templates";
 import { recommendModel } from "@/lib/ai.functions";
@@ -30,9 +30,37 @@ const T = ({ value, onChange, placeholder }: { value: string; onChange: (s: stri
 const Sel = <V extends string>({ value, onChange, options }: { value: V; onChange: (v: V) => void; options: [V, string][] }) => (
   <select value={value} onChange={(e) => onChange(e.target.value as V)} className="rounded border bg-card px-2 py-1 text-sm">{options.map(([v, l]) => <option key={v} value={v}>{l}</option>)}</select>
 );
-const Row = ({ label, children }: { label: string; children: React.ReactNode }) => (
-  <label className="flex items-center justify-between gap-3 px-4 py-1.5 text-sm"><span>{label}</span><span className="w-40">{children}</span></label>
+/* Row preferences (rename, hide, note) and import sources, shared by every tab. */
+const RowCtx = createContext<{ m: Model; editing: boolean; setPref: (id: string, p: RowPref) => void } | null>(null);
+const SourceDot = ({ id }: { id: string }) => {
+  const src = useContext(RowCtx)?.m.sources?.[id];
+  return src ? <span title={`Filled from ${src}`} className="ml-1 cursor-help text-xs text-primary">●</span> : null;
+};
+const Row = ({ id, label, children, extra }: { id?: string; label: string; children: React.ReactNode; extra?: React.ReactNode }) => {
+  const c = useContext(RowCtx);
+  const key = id ?? `r.${label.toLowerCase().replace(/[^a-z0-9]+/g, "-")}`;
+  const pref = c?.m.layout?.[key];
+  if (pref?.hidden && !c?.editing) return null;
+  if (c?.editing) return (
+    <div className={`flex items-center gap-2 px-4 py-1.5 text-sm ${pref?.hidden ? "opacity-50" : ""}`}>
+      {extra}
+      <input value={pref?.label ?? ""} placeholder={label} onChange={(e) => c.setPref(key, { label: e.target.value || undefined })} className="min-w-0 flex-1 rounded border bg-card px-2 py-1" aria-label={`Rename ${label}`} />
+      <input value={pref?.note ?? ""} placeholder="Note" onChange={(e) => c.setPref(key, { note: e.target.value || undefined })} className="w-28 rounded border bg-card px-2 py-1 text-xs" />
+      <label className="flex items-center gap-1 text-xs text-muted-foreground"><input type="checkbox" checked={!pref?.hidden} onChange={(e) => c.setPref(key, { hidden: !e.target.checked || undefined })} />Show</label>
+      <span className="w-40 shrink-0">{children}</span>
+    </div>
+  );
+  return (
+    <label className="flex items-center justify-between gap-3 px-4 py-1.5 text-sm">
+      <span>{pref?.label || label}<SourceDot id={key} />{pref?.note && <span className="block text-xs text-muted-foreground">{pref.note}</span>}</span>
+      <span className="w-40 shrink-0">{children}</span>
+    </label>
+  );
+};
+const Move = ({ onUp, onDown }: { onUp: () => void; onDown: () => void }) => (
+  <span className="flex flex-col leading-none text-muted-foreground"><button type="button" onClick={onUp} aria-label="Move up" className="hover:text-foreground">▲</button><button type="button" onClick={onDown} aria-label="Move down" className="hover:text-foreground">▼</button></span>
 );
+function moveIn<T>(xs: T[], i: number, d: number): T[] { const j = i + d; if (j < 0 || j >= xs.length) return xs; const c = [...xs]; [c[i], c[j]] = [c[j]!, c[i]!]; return c; }
 const Card = ({ title, children, action }: { title: string; children: React.ReactNode; action?: React.ReactNode }) => (
   <section className="space-y-2"><div className="flex items-center justify-between"><h3 className="text-[11px] uppercase tracking-widest text-muted-foreground">{title}</h3>{action}</div><div className="rounded-md border bg-card">{children}</div></section>
 );
@@ -54,8 +82,15 @@ export function UnderwriteModel({ deal, set, onNext }: { deal: Deal; set: SetDea
   const tabs = ALL_TABS.filter((t) => !(m.hiddenTabs ?? []).includes(t));
   const [tab, setTab] = useState<TabId>(tabs[0] ?? "summary");
   const current = tabs.includes(tab) ? tab : "summary";
+  const [editing, setEditing] = useState(false);
+  const setPref = (id: string, p: RowPref) => {
+    const next = { ...(m.layout?.[id] ?? {}), ...p };
+    (Object.keys(next) as (keyof RowPref)[]).forEach((k) => next[k] === undefined && delete next[k]);
+    setM({ layout: { ...(m.layout ?? {}), [id]: next } });
+  };
 
   return (
+    <RowCtx.Provider value={{ m, editing, setPref }}>
     <div className="space-y-6">
       <ModelBar deal={deal} set={set} />
       <div className="grid gap-px overflow-hidden rounded-md border bg-border sm:grid-cols-3 lg:grid-cols-6">
@@ -67,7 +102,9 @@ export function UnderwriteModel({ deal, set, onNext }: { deal: Deal; set: SetDea
         {tabs.map((t) => (
           <button key={t} type="button" onClick={() => setTab(t)} className={`-mb-px border-b-2 px-3 py-2 text-sm ${current === t ? "border-primary text-foreground" : "border-transparent text-muted-foreground hover:text-foreground"}`}>{TAB_LABELS[t]}</button>
         ))}
+        {deal.canEdit !== false && <button type="button" onClick={() => setEditing((e) => !e)} className={`ml-auto px-3 py-2 text-sm ${editing ? "font-medium text-primary" : "text-muted-foreground hover:text-foreground"}`}>{editing ? "Done customizing" : "Customize rows"}</button>}
       </nav>
+      {editing && <p className="-mt-3 text-xs text-muted-foreground">Rename any row, add a note, hide rows you don't use, and reorder building rows and line items. Labels are display only — the math is unchanged. Saved with templates.</p>}
       {current === "building" && <BuildingTab deal={deal} setM={setM} setA={setA} set={set} />}
       {current === "rentroll" && <RentRollTab deal={deal} setM={setM} />}
       {current === "opex" && <OpexTab deal={deal} setM={setM} r={r} />}
@@ -81,6 +118,7 @@ export function UnderwriteModel({ deal, set, onNext }: { deal: Deal; set: SetDea
       {current === "custom" && <CustomTab deal={deal} setM={setM} />}
       {current === "summary" && <SummaryTab deal={deal} r={r} onNext={onNext} />}
     </div>
+    </RowCtx.Provider>
   );
 }
 
@@ -171,17 +209,17 @@ function BuildingTab({ deal, setM, setA, set }: TabProps & { setA: (p: Partial<A
       </Card>
       <div className="space-y-6">
         <Card title="Deal terms"><div className="divide-y">
-          <Row label="Purchase price"><N value={a.price} onChange={(v) => setA({ price: v })} /></Row>
-          <Row label="Units / keys"><N value={a.units} onChange={(v) => setA({ units: v })} /></Row>
-          <Row label="Upfront capex"><N value={a.capex} onChange={(v) => setA({ capex: v })} /></Row>
-          <Row label="Target IRR"><P value={deal.targetIrr} onChange={(v) => set({ targetIrr: v })} /></Row>
+          <Row id="a.price" label="Purchase price"><N value={a.price} onChange={(v) => setA({ price: v })} /></Row>
+          <Row id="a.units" label="Units / keys"><N value={a.units} onChange={(v) => setA({ units: v })} /></Row>
+          <Row id="a.capex" label="Upfront capex"><N value={a.capex} onChange={(v) => setA({ capex: v })} /></Row>
+          <Row id="targetIrr" label="Target IRR"><P value={deal.targetIrr} onChange={(v) => set({ targetIrr: v })} /></Row>
         </div></Card>
         <Card title="Growth, hold & exit"><div className="divide-y">
-          <Row label="Rent growth / yr"><P value={a.rentGrowth} onChange={(v) => setA({ rentGrowth: v })} /></Row>
-          <Row label="Expense growth / yr (default)"><P value={a.expenseGrowth} onChange={(v) => setA({ expenseGrowth: v })} /></Row>
-          <Row label="Hold (years)"><N value={a.holdYears} step={0.5} onChange={(v) => setA({ holdYears: Math.max(0.5, v) })} /></Row>
-          <Row label="Exit cap rate"><P value={a.exitCap} onChange={(v) => setA({ exitCap: v })} /></Row>
-          <Row label="Selling costs"><P value={a.sellPct} onChange={(v) => setA({ sellPct: v })} /></Row>
+          <Row id="a.rentGrowth" label="Rent growth / yr"><P value={a.rentGrowth} onChange={(v) => setA({ rentGrowth: v })} /></Row>
+          <Row id="a.expenseGrowth" label="Expense growth / yr (default)"><P value={a.expenseGrowth} onChange={(v) => setA({ expenseGrowth: v })} /></Row>
+          <Row id="a.holdYears" label="Hold (years)"><N value={a.holdYears} step={0.5} onChange={(v) => setA({ holdYears: Math.max(0.5, v) })} /></Row>
+          <Row id="a.exitCap" label="Exit cap rate"><P value={a.exitCap} onChange={(v) => setA({ exitCap: v })} /></Row>
+          <Row id="a.sellPct" label="Selling costs"><P value={a.sellPct} onChange={(v) => setA({ sellPct: v })} /></Row>
         </div></Card>
         {a.units > 0 && <p className="text-xs text-muted-foreground">Price per unit {usd(a.price / a.units)}{b["buildingSf"] ? ` · ${usd(a.price / (parseFloat(b["buildingSf"].replace(/,/g, "")) || 1))}/SF` : ""}</p>}
       </div>
@@ -378,26 +416,26 @@ function FinancingTab({ deal, setM, r }: TabProps & { r: R }) {
         ["Lowest DSCR", r.minDscr.toFixed(2) + "x", r.minDscr < l.dscrTarget ? "text-destructive" : ""], ["Debt yield", pct(r.debtYield)], [`Max loan at ${l.dscrTarget}x`, usd(r.maxLoanDscr)], ["Lender fees", usd(r.lenderFees)]]} />
       <div className="grid gap-6 lg:grid-cols-2">
         <Card title="Loan structure"><div className="divide-y">
-          <Row label="Structure"><Sel value={l.kind} onChange={(v) => setL({ kind: v })} options={KINDS} /></Row>
-          <Row label="LTV"><P value={l.ltv} onChange={(v) => setL({ ltv: v })} /></Row>
-          <Row label="Interest rate"><P value={l.rate} onChange={(v) => setL({ rate: v })} /></Row>
-          {(l.kind === "amortizing") && <Row label="Interest-only months"><N value={l.ioMonths} onChange={(v) => setL({ ioMonths: v })} /></Row>}
-          {(l.kind === "amortizing" || l.kind === "io") && <Row label="Amortization (yrs)"><N value={l.amortYears} onChange={(v) => setL({ amortYears: v })} /></Row>}
-          <Row label="Term (months)"><N value={l.termMonths} onChange={(v) => setL({ termMonths: v })} /></Row>
-          <Row label="Origination points"><P value={l.points} onChange={(v) => setL({ points: v })} /></Row>
-          {(l.kind === "bridge" || l.kind === "hardmoney") && <Row label="Future funding (capex)"><N value={l.futureFunding} onChange={(v) => setL({ futureFunding: v })} /></Row>}
-          {(l.kind === "bridge" || l.kind === "hardmoney") && <Row label="Extension fee"><P value={l.extensionFee} onChange={(v) => setL({ extensionFee: v })} /></Row>}
-          <Row label="DSCR requirement"><N value={l.dscrTarget} onChange={(v) => setL({ dscrTarget: v })} /></Row>
+          <Row id="loan.kind" label="Structure"><Sel value={l.kind} onChange={(v) => setL({ kind: v })} options={KINDS} /></Row>
+          <Row id="loan.ltv" label="LTV"><P value={l.ltv} onChange={(v) => setL({ ltv: v })} /></Row>
+          <Row id="loan.rate" label="Interest rate"><P value={l.rate} onChange={(v) => setL({ rate: v })} /></Row>
+          {(l.kind === "amortizing") && <Row id="loan.ioMonths" label="Interest-only months"><N value={l.ioMonths} onChange={(v) => setL({ ioMonths: v })} /></Row>}
+          {(l.kind === "amortizing" || l.kind === "io") && <Row id="loan.amortYears" label="Amortization (yrs)"><N value={l.amortYears} onChange={(v) => setL({ amortYears: v })} /></Row>}
+          <Row id="loan.termMonths" label="Term (months)"><N value={l.termMonths} onChange={(v) => setL({ termMonths: v })} /></Row>
+          <Row id="loan.points" label="Origination points"><P value={l.points} onChange={(v) => setL({ points: v })} /></Row>
+          {(l.kind === "bridge" || l.kind === "hardmoney") && <Row id="loan.futureFunding" label="Future funding (capex)"><N value={l.futureFunding} onChange={(v) => setL({ futureFunding: v })} /></Row>}
+          {(l.kind === "bridge" || l.kind === "hardmoney") && <Row id="loan.extensionFee" label="Extension fee"><P value={l.extensionFee} onChange={(v) => setL({ extensionFee: v })} /></Row>}
+          <Row id="loan.dscrTarget" label="DSCR requirement"><N value={l.dscrTarget} onChange={(v) => setL({ dscrTarget: v })} /></Row>
         </div>
           {l.termMonths < deal.assumptions.holdYears * 12 && !refi && <p className="px-4 pb-3 text-xs text-warning">Loan term ({l.termMonths} mo) ends before your hold — add a refinance or shorten the hold.</p>}
         </Card>
         <Card title="Refinance" action={<label className="flex items-center gap-1 text-xs"><input type="checkbox" checked={!!refi} onChange={(e) => setL({ refi: e.target.checked ? { month: Math.min(36, deal.assumptions.holdYears * 12 - 1), ltv: 0.7, rate: 0.065, amortYears: 30, valueCap: deal.assumptions.exitCap } : null })} />Refinance during hold</label>}>
           {refi ? <div className="divide-y">
-            <Row label="Refinance in month"><N value={refi.month} onChange={(v) => setL({ refi: { ...refi, month: v } })} /></Row>
-            <Row label="Valuation cap rate"><P value={refi.valueCap} onChange={(v) => setL({ refi: { ...refi, valueCap: v } })} /></Row>
-            <Row label="New LTV"><P value={refi.ltv} onChange={(v) => setL({ refi: { ...refi, ltv: v } })} /></Row>
-            <Row label="New rate"><P value={refi.rate} onChange={(v) => setL({ refi: { ...refi, rate: v } })} /></Row>
-            <Row label="New amortization (yrs)"><N value={refi.amortYears} onChange={(v) => setL({ refi: { ...refi, amortYears: v } })} /></Row>
+            <Row id="refi.month" label="Refinance in month"><N value={refi.month} onChange={(v) => setL({ refi: { ...refi, month: v } })} /></Row>
+            <Row id="refi.valueCap" label="Valuation cap rate"><P value={refi.valueCap} onChange={(v) => setL({ refi: { ...refi, valueCap: v } })} /></Row>
+            <Row id="refi.ltv" label="New LTV"><P value={refi.ltv} onChange={(v) => setL({ refi: { ...refi, ltv: v } })} /></Row>
+            <Row id="refi.rate" label="New rate"><P value={refi.rate} onChange={(v) => setL({ refi: { ...refi, rate: v } })} /></Row>
+            <Row id="refi.amortYears" label="New amortization (yrs)"><N value={refi.amortYears} onChange={(v) => setL({ refi: { ...refi, amortYears: v } })} /></Row>
             <div className="px-4 py-2 text-sm">Cash out at refinance: <span className="num font-medium">{usd(r.monthly.reduce((s, x) => s + x.refi, 0))}</span></div>
           </div> : <p className="p-4 text-sm text-muted-foreground">Turn on to model a bridge-to-perm or cash-out refinance. The new loan is sized off trailing 12-month NOI at the valuation cap rate.</p>}
         </Card>

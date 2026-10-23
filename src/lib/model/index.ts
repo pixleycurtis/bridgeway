@@ -8,6 +8,9 @@ export * from "./types";
 export * from "./engine";
 export * from "./model-types";
 export * from "./analytics";
+export * from "./fields";
+export * from "./match";
+export * from "./import";
 
 type DealLike = { lines: LineItem[]; assumptions: Assumptions; adjustments: Adjustment[]; model?: Model };
 

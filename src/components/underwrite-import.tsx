@@ -11,7 +11,7 @@ import { applyMapped, catalogFor, matchLabel, normalize, type Confidence, type F
 import { useWorkspace } from "@/lib/workspace";
 
 const TONE: Record<Confidence, [string, string]> = {
-  learned: ["Your firm's term", "bg-success/15 text-success"], exact: ["Exact", "bg-success/15 text-success"], synonym: ["Same meaning", "bg-success/15 text-success"],
+  learned: ["Your firm's term", "bg-primary/10 text-foreground"], exact: ["Exact", "bg-primary/10 text-foreground"], synonym: ["Same meaning", "bg-primary/10 text-foreground"],
   close: ["Best guess — check", "bg-warning/20 text-warning"], computed: ["Calculated by Keystone", "bg-muted text-muted-foreground"], none: ["No match — choose", "bg-destructive/10 text-destructive"],
 };
 const RANK: Record<Confidence, number> = { none: 0, close: 1, learned: 3, exact: 4, synonym: 2, computed: 5 };

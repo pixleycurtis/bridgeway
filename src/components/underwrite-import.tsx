@@ -9,6 +9,8 @@ import { readForAI } from "@/lib/files";
 import { extractRows } from "@/lib/underwrite-csv";
 import { applyMapped, catalogFor, matchLabel, normalize, type Confidence, type FieldDef, type Mapped } from "@/lib/model";
 import { useWorkspace } from "@/lib/workspace";
+import { useServerFn } from "@tanstack/react-start";
+import { guessFieldMatches } from "@/lib/ai.functions";
 
 const TONE: Record<Confidence, [string, string]> = {
   learned: ["Your firm's term", "bg-primary/10 text-foreground"], exact: ["Exact", "bg-primary/10 text-foreground"], synonym: ["Same meaning", "bg-primary/10 text-foreground"],
@@ -16,7 +18,7 @@ const TONE: Record<Confidence, [string, string]> = {
 };
 const RANK: Record<Confidence, number> = { none: 0, close: 1, learned: 3, exact: 4, synonym: 2, computed: 5 };
 
-type Row = Mapped & { confidence: Confidence; auto: string };
+type Row = Mapped & { confidence: Confidence; auto: string; ai?: boolean };
 
 /** Current value of a field on this deal, for side-by-side review. */
 function currentValue(deal: Deal, f: FieldDef | undefined): string {
@@ -44,6 +46,19 @@ export function UnderwriteImport({ deal, set }: { deal: Deal; set: (p: Partial<D
   const [file, setFile] = useState<{ name: string; rows: Row[]; findings: Deal["adjustments"] } | null>(null);
   const [withFindings, setWithFindings] = useState(true);
   const [remember, setRemember] = useState(true);
+  const guess = useServerFn(guessFieldMatches);
+  const [guessing, setGuessing] = useState(false);
+  const askAI = async () => {
+    if (!file) return;
+    const labels = file.rows.filter((r) => r.confidence === "none" && r.dest === "skip").map((r) => r.label);
+    setGuessing(true);
+    try {
+      const { matches } = await guess({ data: { labels, fields: fields.map((f) => ({ id: f.id, label: f.label, section: f.section })) } });
+      const n = Object.keys(matches).length;
+      setFile((s) => s && { ...s, rows: s.rows.map((r) => (r.confidence === "none" && r.dest === "skip" && matches[r.label] ? { ...r, dest: matches[r.label]!, auto: matches[r.label]!, ai: true } : r)) });
+      toast.success(n ? `AI suggested ${n} match${n === 1 ? "" : "es"} — please check them` : "AI couldn't place any of those rows");
+    } catch (e) { toast.error(e instanceof Error ? e.message : "AI guess failed"); } finally { setGuessing(false); }
+  };
 
   const onFile = async (f?: File) => {
     if (!f) return;
@@ -85,6 +100,7 @@ export function UnderwriteImport({ deal, set }: { deal: Deal; set: (p: Partial<D
   const toFill = rows.filter((r) => r.dest !== "skip" && !r.dest.startsWith("new.")).length;
   const toNew = rows.filter((r) => r.dest.startsWith("new.")).length;
   const corrections = rows.filter((r) => r.dest !== r.auto && !r.dest.startsWith("new.")).length;
+  const unmatched = rows.filter((r) => r.confidence === "none" && r.dest === "skip").length;
 
   return (
     <div>
@@ -98,7 +114,8 @@ export function UnderwriteImport({ deal, set }: { deal: Deal; set: (p: Partial<D
           <DialogHeader><DialogTitle className="font-display text-2xl font-normal">Confirm where {file?.name} goes</DialogTitle></DialogHeader>
           {file && (
             <div className="space-y-4 text-sm">
-              <p className="text-muted-foreground">Rows Keystone wasn't sure about are at the top. Change any destination; nothing is filled until you confirm.</p>
+              <div className="flex items-center justify-between gap-3"><p className="text-muted-foreground">Rows Keystone wasn't sure about are at the top. Change any destination; nothing is filled until you confirm.</p>
+                {unmatched > 0 && <Button size="sm" variant="outline" disabled={guessing} onClick={() => void askAI()}>{guessing ? "Asking AI…" : `Ask AI to guess ${unmatched} unmatched`}</Button>}</div>
               <div className="overflow-x-auto rounded-md border">
                 <table className="w-full">
                   <thead className="border-b bg-muted/40 text-xs text-muted-foreground"><tr>
@@ -107,7 +124,7 @@ export function UnderwriteImport({ deal, set }: { deal: Deal; set: (p: Partial<D
                   </tr></thead>
                   <tbody>{rows.map((r, i) => {
                     const f = fields.find((x) => x.id === r.dest);
-                    const [lbl, tone] = r.dest !== r.auto ? ["Changed by you", "bg-primary/10 text-primary"] : TONE[r.confidence];
+                    const [lbl, tone] = r.dest !== r.auto ? ["Changed by you", "bg-primary/10 text-primary"] : r.ai ? ["AI guess — check", "bg-warning/20 text-warning"] : TONE[r.confidence];
                     return (
                       <tr key={i} className={`border-b last:border-0 ${r.dest === "skip" ? "text-muted-foreground" : ""}`}>
                         <td className="px-3 py-1.5">{r.label}</td>

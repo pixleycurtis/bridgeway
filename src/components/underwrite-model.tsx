@@ -306,9 +306,9 @@ function OpexTab({ deal, setM, r }: TabProps & { r: R }) {
       <Card title="Operating expenses" action={<Button size="sm" variant="outline" onClick={() => setM({ opex: [...items, { id: uid(), label: "New expense", basis: "fixed", amount: 0, growth: deal.assumptions.expenseGrowth }] })}>Add line</Button>}>
         <table className="w-full text-sm">
           <thead className="border-b text-xs text-muted-foreground"><tr><Th left>Expense</Th><Th left>Basis</Th><Th>Amount</Th><Th>Growth</Th><Th>Year 1</Th><Th>Monthly</Th><Th>Per unit</Th><Th /></tr></thead>
-          <tbody>{items.map((o) => (
+          <tbody>{items.map((o, i) => (
             <tr key={o.id} className="border-b">
-              <td><T value={o.label} onChange={(v) => setO(o.id, { label: v })} /></td>
+              <td><div className="flex items-center gap-1"><Move onUp={() => setM({ opex: moveIn(items, i, -1) })} onDown={() => setM({ opex: moveIn(items, i, 1) })} /><T value={o.label} onChange={(v) => setO(o.id, { label: v })} /><SourceDot id={`opex:${o.id}`} /></div></td>
               <td><Sel value={o.basis} onChange={(v) => setO(o.id, { basis: v })} options={[["fixed", "$ / year"], ["perUnit", "$ / unit / yr"], ["pctRevenue", "% of revenue"]]} /></td>
               <td className="w-28">{o.basis === "pctRevenue" ? <P value={o.amount} onChange={(v) => setO(o.id, { amount: v })} /> : <N value={o.amount} onChange={(v) => setO(o.id, { amount: v })} />}</td>
               <td className="w-24"><P value={o.growth} onChange={(v) => setO(o.id, { growth: v })} /></td>
@@ -387,9 +387,9 @@ function ClosingTab({ deal, setM, r }: TabProps & { r: R }) {
       <Card title="Closing cost items" action={<Button size="sm" variant="outline" onClick={() => setM({ closing: [...items, { id: uid(), label: "New cost", basis: "fixed", amount: 0 }] })}>Add item</Button>}>
         <table className="w-full text-sm">
           <thead className="border-b text-xs text-muted-foreground"><tr><Th left>Item</Th><Th left>Basis</Th><Th>Amount</Th><Th>Total</Th><Th /></tr></thead>
-          <tbody>{items.map((c) => (
+          <tbody>{items.map((c, i) => (
             <tr key={c.id} className="border-b">
-              <td><T value={c.label} onChange={(v) => setC(c.id, { label: v })} /></td>
+              <td><div className="flex items-center gap-1"><Move onUp={() => setM({ closing: moveIn(items, i, -1) })} onDown={() => setM({ closing: moveIn(items, i, 1) })} /><T value={c.label} onChange={(v) => setC(c.id, { label: v })} /><SourceDot id={`cost:${c.id}`} /></div></td>
               <td><Sel value={c.basis} onChange={(v) => setC(c.id, { basis: v })} options={[["fixed", "Fixed $"], ["pctPrice", "% of price"], ["pctLoan", "% of loan"]]} /></td>
               <td className="w-32">{c.basis === "fixed" ? <N value={c.amount} onChange={(v) => setC(c.id, { amount: v })} /> : <P value={c.amount} onChange={(v) => setC(c.id, { amount: v })} />}</td>
               <td className="num px-2 text-right">{usd(amt(c))}</td>

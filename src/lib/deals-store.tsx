@@ -139,7 +139,7 @@ interface Ctx {
   deals: Deal[];
   loading: boolean;
   update: (id: string, patch: Partial<Deal>) => void;
-  create: (name: string, market: string, propertyType?: string, model?: Model, team?: string[]) => Promise<string | null>;
+  create: (name: string, market: string, propertyType?: string, model?: Model, team?: string[], prepare?: Prepare) => Promise<string | null>;
 }
 const g = globalThis as unknown as { __keystoneDealsCtx2?: React.Context<Ctx | null> };
 const DealsCtx = (g.__keystoneDealsCtx2 ??= createContext<Ctx | null>(null));
@@ -184,7 +184,7 @@ export function DealsProvider({ children }: { children: ReactNode }) {
     };
   };
 
-  const create = async (name: string, market: string, propertyType?: string, model?: Model, team?: string[]) => {
+  const create = async (name: string, market: string, propertyType?: string, model?: Model, team?: string[], prepare?: Prepare) => {
     if (!firm) return null;
     const first = settings.stages[0] ?? "Screening";
     const d = settings.defaults;
@@ -210,6 +210,10 @@ export function DealsProvider({ children }: { children: ReactNode }) {
       lines: lines(Array(10).fill(0), Array(10).fill(0), Array(10).fill(0)), adjustments: [],
       model: model ?? {}, team: team ?? [],
     };
+    if (prepare) {
+      const p = prepare({ lines: row.lines, assumptions: row.assumptions, model: (model ?? {}) as Model, targetIrr: row.target_irr, adjustments: [] });
+      Object.assign(row, { lines: p.lines, assumptions: p.assumptions, model: p.model, target_irr: p.targetIrr, adjustments: p.adjustments, asking_price: p.assumptions.price });
+    }
     const { data, error } = await supabase.from("deals").insert(row as never).select().single();
     if (error || !data) { toast.error(error?.message ?? "Couldn't create deal"); return null; }
     setDeals((ds) => [fromRow(data as Row, firm.id), ...ds]);
@@ -218,6 +222,9 @@ export function DealsProvider({ children }: { children: ReactNode }) {
 
   return <DealsCtx.Provider value={{ deals, loading, update, create }}>{children}</DealsCtx.Provider>;
 }
+
+export type DealParts = { lines: Deal["lines"]; assumptions: Assumptions; model: Model; targetIrr: number; adjustments: Deal["adjustments"] };
+export type Prepare = (d: DealParts) => DealParts;
 
 export function useDeals() {
   const c = useContext(DealsCtx);

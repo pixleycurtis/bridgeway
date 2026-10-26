@@ -15,6 +15,13 @@ import { nextDealAction, useDealActions, type ActionTask, type ActionRequest } f
 import { useWorkspace } from "@/lib/workspace";
 import { PIPELINE_COLUMNS, allStages, daysInStage, isOpen, type ColumnKey } from "@/lib/firm-settings";
 import { supabase } from "@/integrations/supabase/client";
+import { useServerFn } from "@tanstack/react-start";
+import { toast } from "sonner";
+import { extractFinancials } from "@/lib/ai.functions";
+import { ACCEPT, readForAI } from "@/lib/files";
+import { extractRows } from "@/lib/underwrite-csv";
+import { applyMapped, catalogFor, matchLabel } from "@/lib/model";
+import type { DealParts } from "@/lib/deals-store";
 
 export const Route = createFileRoute("/_authenticated/")({
   head: () => ({
@@ -233,8 +240,11 @@ function Board({ deals, stages, stall, taskStats, tasks, requests, onMove }: { d
 
 function NewDeal() {
   const { create } = useDeals();
-  const { settings } = useWorkspace();
+  const { settings, firm } = useWorkspace();
   const { templates } = useTemplates();
+  const extract = useServerFn(extractFinancials);
+  const [files, setFiles] = useState<{ om?: File; t12?: File; uw?: File }>({});
+  const [busy, setBusy] = useState("");
   const nav = useNavigate();
   const [name, setName] = useState("");
   const [market, setMarket] = useState("");
@@ -259,7 +269,47 @@ function NewDeal() {
           const tpl = templates.find((t) => t.id === templateId);
           const seed = seedModel(tpl ? (tpl.modelType as ModelTypeId) : modelId, 24, { ltv: d.ltv, rate: d.rate, amortYears: 30 });
           const model = tpl ? { ...applyTemplate(seed, tpl.config, tpl.modelType), templateId: tpl.id } : seed;
-          const id = await create(name.trim(), market.trim(), type, model, team);
+          let prepare: ((p: DealParts) => DealParts) | undefined;
+          let skipped = 0;
+          if (mode === "upload" && (files.om || files.t12 || files.uw)) {
+            try {
+              const got: { om?: Awaited<ReturnType<typeof extract>>; t12?: Awaited<ReturnType<typeof extract>> } = {};
+              for (const k of ["om", "t12"] as const) {
+                const f = files[k];
+                if (f) { setBusy(`Reading ${k === "om" ? "broker OM" : "T-12"}…`); got[k] = await extract({ data: { ...(await readForAI(f)), kind: k } }); }
+              }
+              let uwText = "";
+              if (files.uw) { setBusy("Reading underwriting file…"); uwText = /\.(xlsx|xls)$/i.test(files.uw.name) ? (await readForAI(files.uw)).text ?? "" : await files.uw.text(); }
+              const uwName = files.uw?.name ?? "";
+              prepare = (p) => {
+                let lines = p.lines.map((l) => ({ ...l }));
+                const a = { ...p.assumptions };
+                if (got.om) { lines = lines.map((l) => ({ ...l, broker: got.om!.values[l.key] ?? l.broker })); if (got.om.price) a.price = got.om.price; if (got.om.units) a.units = got.om.units; }
+                if (got.t12) { lines = lines.map((l) => ({ ...l, t12: got.t12!.values[l.key] ?? l.t12, underwrite: l.underwrite || (got.t12!.values[l.key] ?? 0) })); if (got.t12.units) a.units = got.t12.units; }
+                let out: DealParts = { ...p, lines, assumptions: a };
+                if (uwText) {
+                  const fields = catalogFor(out.model, !!out.model.type);
+                  const { rows, findings } = extractRows(uwText);
+                  const mapped = rows.map((r) => { const m = matchLabel(r.label, fields, settings.terms); const sure = m.fieldId && m.confidence !== "close" && m.confidence !== "none"; if (!sure) skipped++; return { ...r, dest: sure ? m.fieldId! : "skip" }; });
+                  const { patch } = applyMapped(out, mapped, fields, uwName);
+                  out = { ...out, ...patch, adjustments: [...out.adjustments, ...findings] };
+                }
+                return out;
+              };
+            } catch (err) { toast.error(err instanceof Error ? err.message : "Couldn't read a file"); setBusy(""); return; }
+          }
+          setBusy("Creating deal…");
+          const id = await create(name.trim(), market.trim(), type, model, team, prepare);
+          if (id && firm) {
+            for (const [k, f] of Object.entries(files) as ["om" | "t12" | "uw", File | undefined][]) {
+              if (!f || mode !== "upload") continue;
+              const path = `${firm.id}/${id}/${Date.now()}-${f.name.replace(/[^\w.-]+/g, "_")}`;
+              const up = await supabase.storage.from("deal-files").upload(path, f);
+              if (!up.error) await supabase.from("deal_files").insert({ deal_id: id, kind: k === "uw" ? "underwriting" : k, name: f.name, path });
+            }
+            if (skipped) toast.message(`${skipped} underwriting row${skipped === 1 ? "" : "s"} weren't a sure match — upload the file again on the Underwrite step to place them`);
+          }
+          setBusy("");
           if (id) nav({ to: "/deals/$dealId", params: { dealId: id }, search: { step: mode === "upload" ? "reconcile" : "underwrite" } });
         }}>
           <div className="grid grid-cols-2 gap-2">
@@ -281,6 +331,17 @@ function NewDeal() {
           {!templateId && <select value={modelId} onChange={(e) => setModelId(e.target.value as ModelTypeId)} className="h-10 w-full rounded-md border bg-card px-3 text-sm" aria-label="Underwriting model">
             {MODEL_TYPES.map((t) => <option key={t.id} value={t.id}>{t.label}</option>)}
           </select>}
+          {mode === "upload" && (
+            <div className="grid gap-2">
+              {([["om", "Broker OM", ACCEPT], ["t12", "T-12", ACCEPT], ["uw", "Underwriting file", ".csv,.txt,.xlsx,.xls"]] as const).map(([k, label, acc]) => (
+                <label key={k} className="flex cursor-pointer items-center justify-between gap-2 rounded border border-dashed px-3 py-2 text-sm hover:border-primary">
+                  <span>{label}</span>
+                  <span className="truncate text-xs text-muted-foreground">{files[k]?.name ?? "Choose file"}</span>
+                  <input type="file" accept={acc} className="hidden" onChange={(e) => { const f = e.target.files?.[0]; setFiles((s) => ({ ...s, [k]: f })); e.target.value = ""; }} />
+                </label>
+              ))}
+            </div>
+          )}
           {members.length > 0 && (
             <fieldset>
               <legend className="mb-1 text-xs text-muted-foreground">Team on this deal</legend>
@@ -297,7 +358,7 @@ function NewDeal() {
               </div>
             </fieldset>
           )}
-          <Button type="submit" className="w-full">{mode === "upload" ? "Create and upload files" : "Create and start underwriting"}</Button>
+          <Button type="submit" className="w-full" disabled={!!busy}>{busy || (mode === "upload" ? (files.om || files.t12 || files.uw ? "Create and fill from files" : "Create and upload files") : "Create and start underwriting")}</Button>
         </form>
       </DialogContent>
     </Dialog>

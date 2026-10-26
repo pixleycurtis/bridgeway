@@ -171,3 +171,19 @@ export const recommendModel = createServerFn({ method: "POST" })
     const text = await runClaude([{ role: "user", content: `Options:\n${data.options}\n\nDeal facts:\n${data.facts}\n\nA simple rule check suggested: ${data.ruleBased}` }], system);
     return { text: text.replace(/\*\*/g, "").trim() };
   });
+
+/** Suggest destinations for file rows the rule matcher couldn't place. Suggestions are shown for confirmation only. */
+export const guessFieldMatches = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d) => z.object({ labels: z.array(z.string().max(200)).max(80), fields: z.array(z.object({ id: z.string().max(80), label: z.string().max(120), section: z.string().max(60) })).max(400) }).parse(d))
+  .handler(async ({ data }) => {
+    if (!data.labels.length) return { matches: {} as Record<string, string> };
+    const system = `You map row labels from a real estate underwriting spreadsheet to fields in an underwriting model. Only map when the meaning is clearly the same; otherwise use "skip". Reply with JSON only: {"<label>": "<field id or skip>"}.`;
+    const list = data.fields.map((f) => `${f.id} = ${f.section} > ${f.label}`).join("\n");
+    const text = await runClaude([{ role: "user", content: `Fields:\n${list}\n\nLabels:\n${data.labels.join("\n")}` }], system);
+    const raw = parseJson<Record<string, string>>(text);
+    const ids = new Set(data.fields.map((f) => f.id));
+    const matches: Record<string, string> = {};
+    for (const [k, v] of Object.entries(raw ?? {})) if (typeof v === "string" && ids.has(v)) matches[k] = v;
+    return { matches };
+  });

@@ -51,3 +51,6 @@
 - [x] Model engine (monthly → annual), IO/bridge/hard money/refi, DSCR, closing items, opex lines
 - [x] Rent roll + turnover, waterfall + cost tracker, working capital, comps, accounting check, custom fields
 - [x] Model types + rule/Claude recommendation; firm templates; new-deal "enter vs upload" prompt
+
+## Smart field matching (plan 2026-10-22)
+- [x] Synonym matching, review screen, row rename/hide/notes, reorder, source dots, AI guess for unmatched

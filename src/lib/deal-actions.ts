@@ -7,7 +7,7 @@ export type ActionRequest = { id: string; deal_id: string; label: string; catego
 export type ActionMember = { id: string; user_id: string; full_name: string | null; email: string };
 
 export function signalActionsChanged() {
-  if (typeof window !== "undefined") window.dispatchEvent(new Event("keystone:actions-changed"));
+  if (typeof window !== "undefined") window.dispatchEvent(new Event("bridgeway:actions-changed"));
 }
 
 export function useDealActions(deals: Deal[]) {
@@ -40,8 +40,8 @@ export function useDealActions(deals: Deal[]) {
 
   useEffect(() => {
     void reload();
-    window.addEventListener("keystone:actions-changed", reload);
-    return () => window.removeEventListener("keystone:actions-changed", reload);
+    window.addEventListener("bridgeway:actions-changed", reload);
+    return () => window.removeEventListener("bridgeway:actions-changed", reload);
   }, [reload]);
 
   const completeTask = async (task: ActionTask) => {

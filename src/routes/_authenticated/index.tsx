@@ -26,9 +26,9 @@ import type { DealParts } from "@/lib/deals-store";
 export const Route = createFileRoute("/_authenticated/")({
   head: () => ({
     meta: [
-      { title: "Pipeline — Keystone" },
+      { title: "Pipeline — Bridgeway" },
       { name: "description", content: "See every deal by stage, filter by property type and market, and spot stalled deals." },
-      { property: "og:title", content: "Pipeline — Keystone" },
+      { property: "og:title", content: "Pipeline — Bridgeway" },
       { property: "og:description", content: "See every deal by stage, filter by property type and market, and spot stalled deals." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },

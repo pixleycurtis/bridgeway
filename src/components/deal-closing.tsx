@@ -154,7 +154,7 @@ export function DealClosing({ deal }: { deal: Deal }) {
         ) : items.length === 0 ? (
           <div className="mt-6 rounded-md border border-dashed bg-card p-8 text-center text-sm text-muted-foreground">
             {section === "commitment"
-              ? "Nothing tracked yet. Upload the title commitment and Keystone will pull the requirements and exceptions in, or start from the standard list."
+              ? "Nothing tracked yet. Upload the title commitment and Bridgeway will pull the requirements and exceptions in, or start from the standard list."
               : "No closing tasks yet. Start from the standard list."}
           </div>
         ) : (

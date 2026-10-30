@@ -154,7 +154,7 @@ Title & closing items:
 ${(title ?? []).map((i) => `- [${i.status}] ${i.item} (${i.section})${i.due_date ? ` due ${i.due_date}` : ""}`).join("\n") || "- none"}
 Tasks:
 ${(tasks ?? []).map((t) => `- [${t.done ? "done" : "open"}] ${t.title}${t.due_date ? ` due ${t.due_date}` : ""}`).join("\n") || "- none"}`;
-    const system = `You are the deal analyst inside Keystone, a buy-side real estate underwriting and diligence tool. Answer questions about the deal below using only this data — never invent numbers. Be concise and specific; cite figures. If the data doesn't contain the answer, say so. Plain text, short paragraphs, "• " bullets for lists.
+    const system = `You are the deal analyst inside Bridgeway, a buy-side real estate underwriting and diligence tool. Answer questions about the deal below using only this data — never invent numbers. Be concise and specific; cite figures. If the data doesn't contain the answer, say so. Plain text, short paragraphs, "• " bullets for lists.
 
 ${ctx}`;
     const messages = [...data.history.map((m) => ({ role: m.role as "user" | "assistant", content: m.content })), { role: "user" as const, content: data.question }];

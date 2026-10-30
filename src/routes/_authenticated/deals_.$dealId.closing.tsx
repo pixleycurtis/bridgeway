@@ -10,9 +10,9 @@ import { useWorkspace } from "@/lib/workspace";
 export const Route = createFileRoute("/_authenticated/deals_/$dealId/closing")({
   head: () => ({
     meta: [
-      { title: "Closing checklist — Keystone" },
+      { title: "Closing checklist — Bridgeway" },
       { name: "description", content: "Track every closing task to the table and export the checklist as a PDF." },
-      { property: "og:title", content: "Closing checklist — Keystone" },
+      { property: "og:title", content: "Closing checklist — Bridgeway" },
       { property: "og:description", content: "Track every closing task to the table and export the checklist as a PDF." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
@@ -64,7 +64,7 @@ function ClosingChecklistPage() {
       <article className="print-doc rounded-md border bg-card p-8">
         <header className="flex items-start justify-between gap-4 border-b pb-4">
           <div>
-            <div className="text-[11px] uppercase tracking-widest text-muted-foreground">{firm?.name ?? "Keystone"} · Closing checklist</div>
+            <div className="text-[11px] uppercase tracking-widest text-muted-foreground">{firm?.name ?? "Bridgeway"} · Closing checklist</div>
             <h1 className="mt-1 font-display text-3xl">{deal.name}</h1>
             <p className="mt-1 text-sm text-muted-foreground">{done} of {items.length} complete · {new Date().toLocaleDateString()}</p>
           </div>

@@ -7,9 +7,9 @@ import { listMyDeals } from "@/lib/room.functions";
 
 export const Route = createFileRoute("/_authenticated/work/")({
   head: () => ({ meta: [
-    { title: "My work — Keystone" },
+    { title: "My work — Bridgeway" },
     { name: "description", content: "Everything buyers have asked of you, across all your deals, sorted by due date." },
-    { property: "og:title", content: "My work — Keystone" },
+    { property: "og:title", content: "My work — Bridgeway" },
     { property: "og:description", content: "Everything buyers have asked of you, across all your deals, sorted by due date." },
     { property: "og:type", content: "website" },
     { name: "twitter:card", content: "summary" },
@@ -31,7 +31,7 @@ function MyWork() {
     <div className="min-h-screen">
       <header className="border-b bg-card">
         <div className="mx-auto flex max-w-4xl items-center justify-between px-6 py-4">
-          <span className="font-display text-xl">Keystone</span>
+          <span className="font-display text-xl">Bridgeway</span>
           <span className="flex items-center gap-3 text-xs text-muted-foreground">
             {data?.hasFirm && <Link to="/" className="text-sm text-primary hover:underline">← Your workspace</Link>}
             {data?.email}<Button variant="ghost" size="sm" onClick={() => void signOut()}>Sign out</Button>

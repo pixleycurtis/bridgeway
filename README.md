@@ -1,16 +1,16 @@
-# Keystone
+# Bridgeway
 
 **Buy-side underwriting, due diligence, and retrade software for real estate acquisitions.**
 
-Keystone connects the whole acquisition, from the first broker OM to closing. It takes the seller's numbers, checks them against the real operating history, underwrites the deal with an institutional-grade model, and turns diligence findings into a price adjustment backed by the math. All parties work in one place, and the buyer's confidential analysis never leaves the buyer's workspace.
+Bridgeway connects the whole acquisition, from the first broker OM to closing. It takes the seller's numbers, checks them against the real operating history, underwrites the deal with an institutional-grade model, and turns diligence findings into a price adjustment backed by the math. All parties work in one place, and the buyer's confidential analysis never leaves the buyer's workspace.
 
 Built for small-balance acquisitions (roughly 2–50 units, $1–15M) across multifamily, residential, hospitality, industrial, and commercial property.
 
 ---
 
-## Why Keystone
+## Why Bridgeway
 
-Acquisition teams usually juggle Excel models, email threads, data-room links, and PDF checklists. Keystone fixes three gaps:
+Acquisition teams usually juggle Excel models, email threads, data-room links, and PDF checklists. Bridgeway fixes three gaps:
 
 1. **The DD-to-underwriting loop.** Diligence findings (a roof estimate, a tax reassessment, a title exception) feed straight into NOI, price, and IRR, so the retrade comes out of the numbers instead of a guess.
 2. **Confidential versus shared.** Internal underwriting, retrade memos, and committee material stay private ("bunker"). Sellers, lenders, title officers, and counsel see only the items shared with their role ("bridge").

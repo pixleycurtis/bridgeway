@@ -10,9 +10,9 @@ import { allStages, daysInStage, isOpen } from "@/lib/firm-settings";
 export const Route = createFileRoute("/_authenticated/insights")({
   head: () => ({
     meta: [
-      { title: "Insights — Keystone" },
+      { title: "Insights — Bridgeway" },
       { name: "description", content: "Return, risk, management, tax and liquidity insights across your pipeline, filtered by property type and market." },
-      { property: "og:title", content: "Insights — Keystone" },
+      { property: "og:title", content: "Insights — Bridgeway" },
       { property: "og:description", content: "Return, risk, management, tax and liquidity insights across your pipeline, filtered by property type and market." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },

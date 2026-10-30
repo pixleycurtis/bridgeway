@@ -37,7 +37,7 @@
 - [x] Findings priced in data room/title + reconcile gaps flow into retrade and objection letter
 - [x] Signed-in account access for outside parties
 
-## Active: Keystone for every party (plan 2026-09-29)
+## Active: Bridgeway for every party (plan 2026-09-29)
 - [x] Outside parties sign in (or use link); party-only accounts land on My work
 - [x] My work page across deals; assign items/tasks to a party role
 - [x] Item threads (internal + per role) and deal message channels; outside activity on Today

@@ -13,7 +13,7 @@ export function AppShell({ children }: { children: ReactNode }) {
         <div className="px-5 pb-6 pt-6">
           <Link to="/" className="flex items-center gap-2">
             {logoUrl && <img src={logoUrl} alt="" className="h-8 w-8 rounded bg-card object-contain p-0.5" />}
-            <span className="truncate font-display text-2xl tracking-tight text-sidebar-accent-foreground">{firm?.name ?? "Keystone"}</span>
+            <span className="truncate font-display text-2xl tracking-tight text-sidebar-accent-foreground">{firm?.name ?? "Bridgeway"}</span>
           </Link>
         </div>
         <nav className="flex flex-col gap-0.5 px-3 text-sm">
@@ -42,7 +42,7 @@ export function AppShell({ children }: { children: ReactNode }) {
       </aside>
       <div className="flex min-w-0 flex-1 flex-col">
         <header className="flex flex-wrap items-center gap-x-4 gap-y-2 border-b px-4 py-3 md:hidden">
-          <Link to="/" className="font-display text-xl">{firm?.name ?? "Keystone"}</Link>
+          <Link to="/" className="font-display text-xl">{firm?.name ?? "Bridgeway"}</Link>
           <Link to="/today" className="text-sm text-muted-foreground">Today</Link>
           <Link to="/" className="text-sm text-muted-foreground">Pipeline</Link>
           <Link to="/portfolio" className="text-sm text-muted-foreground">Portfolio</Link>

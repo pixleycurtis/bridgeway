@@ -28,9 +28,9 @@ export const Route = createFileRoute("/_authenticated/deals/$dealId")({
   validateSearch: (search: Record<string, unknown>): { step?: string } => typeof search["step"] === "string" ? { step: search["step"] } : {},
   head: () => ({
     meta: [
-      { title: "Deal workspace — Keystone" },
+      { title: "Deal workspace — Bridgeway" },
       { name: "description", content: "Reconcile the broker OM, underwrite, and build a retrade from diligence findings." },
-      { property: "og:title", content: "Deal workspace — Keystone" },
+      { property: "og:title", content: "Deal workspace — Bridgeway" },
       { property: "og:description", content: "Reconcile the broker OM, underwrite, and build a retrade from diligence findings." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },

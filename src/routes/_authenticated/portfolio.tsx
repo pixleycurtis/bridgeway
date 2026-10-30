@@ -11,9 +11,9 @@ import { analyze, pct, usd } from "@/lib/finance";
 export const Route = createFileRoute("/_authenticated/portfolio")({
   head: () => ({
     meta: [
-      { title: "Portfolio — Keystone" },
+      { title: "Portfolio — Bridgeway" },
       { name: "description", content: "Closed deals with quarterly actuals measured against your underwrite." },
-      { property: "og:title", content: "Portfolio — Keystone" },
+      { property: "og:title", content: "Portfolio — Bridgeway" },
       { property: "og:description", content: "Closed deals with quarterly actuals measured against your underwrite." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },

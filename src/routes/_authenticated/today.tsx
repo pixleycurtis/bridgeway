@@ -10,9 +10,9 @@ import { isOpen } from "@/lib/firm-settings";
 
 export const Route = createFileRoute("/_authenticated/today")({
   head: () => ({ meta: [
-    { title: "Today — Keystone" },
+    { title: "Today — Bridgeway" },
     { name: "description", content: "Your firm's live deal priorities, deadlines, owners, and missing diligence." },
-    { property: "og:title", content: "Today — Keystone" },
+    { property: "og:title", content: "Today — Bridgeway" },
     { property: "og:description", content: "Your firm's live deal priorities, deadlines, owners, and missing diligence." },
     { property: "og:type", content: "website" },
     { name: "twitter:card", content: "summary" },

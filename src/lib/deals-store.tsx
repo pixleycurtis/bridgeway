@@ -141,8 +141,8 @@ interface Ctx {
   update: (id: string, patch: Partial<Deal>) => void;
   create: (name: string, market: string, propertyType?: string, model?: Model, team?: string[], prepare?: Prepare) => Promise<string | null>;
 }
-const g = globalThis as unknown as { __keystoneDealsCtx2?: React.Context<Ctx | null> };
-const DealsCtx = (g.__keystoneDealsCtx2 ??= createContext<Ctx | null>(null));
+const g = globalThis as unknown as { __bridgewayDealsCtx2?: React.Context<Ctx | null> };
+const DealsCtx = (g.__bridgewayDealsCtx2 ??= createContext<Ctx | null>(null));
 
 export function DealsProvider({ children }: { children: ReactNode }) {
   const { firm, user, justCreated, settings } = useWorkspace();

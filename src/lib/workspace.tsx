@@ -28,8 +28,8 @@ interface Ctx {
   refreshFirm: () => Promise<void>;
   signOut: () => Promise<void>;
 }
-const g = globalThis as unknown as { __keystoneWsCtx?: React.Context<Ctx | null> };
-const WsCtx = (g.__keystoneWsCtx ??= createContext<Ctx | null>(null));
+const g = globalThis as unknown as { __bridgewayWsCtx?: React.Context<Ctx | null> };
+const WsCtx = (g.__bridgewayWsCtx ??= createContext<Ctx | null>(null));
 
 export async function signedLogo(path: string | null) {
   if (!path) return null;

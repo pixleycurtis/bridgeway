@@ -14,7 +14,7 @@ import { guessFieldMatches } from "@/lib/ai.functions";
 
 const TONE: Record<Confidence, [string, string]> = {
   learned: ["Your firm's term", "bg-primary/10 text-foreground"], exact: ["Exact", "bg-primary/10 text-foreground"], synonym: ["Same meaning", "bg-primary/10 text-foreground"],
-  close: ["Best guess — check", "bg-warning/20 text-warning"], computed: ["Calculated by Keystone", "bg-muted text-muted-foreground"], none: ["No match — choose", "bg-destructive/10 text-destructive"],
+  close: ["Best guess — check", "bg-warning/20 text-warning"], computed: ["Calculated by Bridgeway", "bg-muted text-muted-foreground"], none: ["No match — choose", "bg-destructive/10 text-destructive"],
 };
 const RANK: Record<Confidence, number> = { none: 0, close: 1, learned: 3, exact: 4, synonym: 2, computed: 5 };
 
@@ -86,7 +86,7 @@ export function UnderwriteImport({ deal, set }: { deal: Deal; set: (p: Partial<D
       for (const r of corrections) terms[normalize(r.label)] = r.dest;
       const raw = (firm.settings && typeof firm.settings === "object" ? firm.settings : {}) as Record<string, unknown>;
       const { error } = await supabase.from("firms").update({ settings: { ...raw, terms } as never }).eq("id", firm.id);
-      if (error) toast.error("Couldn't save your terms for next time (only admins can)"); else { await refreshFirm(); toast.success(`Keystone will remember ${corrections.length} term${corrections.length === 1 ? "" : "s"}`); }
+      if (error) toast.error("Couldn't save your terms for next time (only admins can)"); else { await refreshFirm(); toast.success(`Bridgeway will remember ${corrections.length} term${corrections.length === 1 ? "" : "s"}`); }
     }
     setFile(null);
   };
@@ -114,13 +114,13 @@ export function UnderwriteImport({ deal, set }: { deal: Deal; set: (p: Partial<D
           <DialogHeader><DialogTitle className="font-display text-2xl font-normal">Confirm where {file?.name} goes</DialogTitle></DialogHeader>
           {file && (
             <div className="space-y-4 text-sm">
-              <div className="flex items-center justify-between gap-3"><p className="text-muted-foreground">Rows Keystone wasn't sure about are at the top. Change any destination; nothing is filled until you confirm.</p>
+              <div className="flex items-center justify-between gap-3"><p className="text-muted-foreground">Rows Bridgeway wasn't sure about are at the top. Change any destination; nothing is filled until you confirm.</p>
                 {unmatched > 0 && <Button size="sm" variant="outline" disabled={guessing} onClick={() => void askAI()}>{guessing ? "Asking AI…" : `Ask AI to guess ${unmatched} unmatched`}</Button>}</div>
               <div className="overflow-x-auto rounded-md border">
                 <table className="w-full">
                   <thead className="border-b bg-muted/40 text-xs text-muted-foreground"><tr>
                     <th className="px-3 py-2 text-left font-medium">In your file</th><th className="px-3 text-right font-medium">Value</th>
-                    <th className="px-3 text-left font-medium">Goes to</th><th className="px-3 text-right font-medium">Now in Keystone</th><th className="px-3 text-left font-medium">Match</th>
+                    <th className="px-3 text-left font-medium">Goes to</th><th className="px-3 text-right font-medium">Now in Bridgeway</th><th className="px-3 text-left font-medium">Match</th>
                   </tr></thead>
                   <tbody>{rows.map((r, i) => {
                     const f = fields.find((x) => x.id === r.dest);

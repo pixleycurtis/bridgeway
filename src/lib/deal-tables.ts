@@ -155,8 +155,8 @@ export function useTaskStats(dealIds: string[]) {
       setStats(next);
     })(); };
     refresh();
-    window.addEventListener("keystone:actions-changed", refresh);
-    return () => window.removeEventListener("keystone:actions-changed", refresh);
+    window.addEventListener("bridgeway:actions-changed", refresh);
+    return () => window.removeEventListener("bridgeway:actions-changed", refresh);
   }, [key]);
   return stats;
 }

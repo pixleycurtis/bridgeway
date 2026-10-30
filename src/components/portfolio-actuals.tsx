@@ -39,7 +39,7 @@ export function ActualsEditor({ deal }: { deal: Deal }) {
 
   return (
     <div>
-      <p className="text-sm text-muted-foreground">Log what the property actually does each quarter. Keystone compares it to what you underwrote.</p>
+      <p className="text-sm text-muted-foreground">Log what the property actually does each quarter. Bridgeway compares it to what you underwrote.</p>
       {deal.canEdit && (
         <form onSubmit={submit} className="mt-4 flex flex-wrap items-end gap-2 rounded-md border bg-card p-4">
           <label className="flex flex-col gap-1 text-xs text-muted-foreground">Period

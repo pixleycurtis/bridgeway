@@ -23,7 +23,7 @@ export function TerminologySettings() {
   return (
     <section>
       <h2 className="font-display text-2xl">Underwriting terminology</h2>
-      <p className="mt-1 text-sm text-muted-foreground">Keystone already knows common terms (year built = date built, real estate taxes = property taxes…). Add your firm's own wording here, or correct a match while uploading.</p>
+      <p className="mt-1 text-sm text-muted-foreground">Bridgeway already knows common terms (year built = date built, real estate taxes = property taxes…). Add your firm's own wording here, or correct a match while uploading.</p>
       <div className="mt-5 space-y-4 rounded-md border bg-card p-5">
         {isAdmin && (
           <form className="flex flex-wrap items-center gap-2" onSubmit={(e) => { e.preventDefault(); const k = normalize(label); if (!k) return; void save({ ...settings.terms, [k]: dest }); setLabel(""); }}>

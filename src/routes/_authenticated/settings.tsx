@@ -18,10 +18,10 @@ import { TerminologySettings } from "@/components/terminology-settings";
 export const Route = createFileRoute("/_authenticated/settings")({
   head: () => ({
     meta: [
-      { title: "Firm settings — Keystone" },
-      { name: "description", content: "Brand your documents, manage your team, and teach Keystone your firm's writing style." },
-      { property: "og:title", content: "Firm settings — Keystone" },
-      { property: "og:description", content: "Brand your documents, manage your team, and teach Keystone your firm's writing style." },
+      { title: "Firm settings — Bridgeway" },
+      { name: "description", content: "Brand your documents, manage your team, and teach Bridgeway your firm's writing style." },
+      { property: "og:title", content: "Firm settings — Bridgeway" },
+      { property: "og:description", content: "Brand your documents, manage your team, and teach Bridgeway your firm's writing style." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
     ],

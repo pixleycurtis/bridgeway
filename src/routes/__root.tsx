@@ -80,7 +80,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "Keystone — Buy-side underwriting, DD & retrade" },
+      { title: "Bridgeway — Buy-side underwriting, DD & retrade" },
       { name: "description", content: "Reconcile broker OMs against the T-12, turn diligence into price, and learn from your pipeline." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },

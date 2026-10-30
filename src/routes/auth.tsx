@@ -9,10 +9,10 @@ import { Input } from "@/components/ui/input";
 export const Route = createFileRoute("/auth")({
   head: () => ({
     meta: [
-      { title: "Sign in — Keystone" },
-      { name: "description", content: "Sign in with your work email to open your firm's Keystone workspace." },
-      { property: "og:title", content: "Sign in — Keystone" },
-      { property: "og:description", content: "Sign in with your work email to open your firm's Keystone workspace." },
+      { title: "Sign in — Bridgeway" },
+      { name: "description", content: "Sign in with your work email to open your firm's Bridgeway workspace." },
+      { property: "og:title", content: "Sign in — Bridgeway" },
+      { property: "og:description", content: "Sign in with your work email to open your firm's Bridgeway workspace." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
     ],
@@ -61,7 +61,7 @@ function AuthPage() {
   return (
     <div className="grid min-h-screen md:grid-cols-2">
       <div className="hidden flex-col justify-between bg-sidebar p-12 text-sidebar-foreground md:flex">
-        <div className="font-display text-3xl text-sidebar-accent-foreground">Keystone</div>
+        <div className="font-display text-3xl text-sidebar-accent-foreground">Bridgeway</div>
         <div>
           <p className="font-display text-4xl leading-tight text-sidebar-accent-foreground">Every deliverable a buyer sends, written from the numbers.</p>
           <p className="mt-4 max-w-md text-sm text-sidebar-foreground/70">Reconcile the broker's pitch against the books, underwrite as a team, and send lenders and sellers documents on your own letterhead.</p>
@@ -87,7 +87,7 @@ function AuthPage() {
                 {mode === "magic" ? "Use a password instead" : "Email me a sign-in link instead"}
               </button>
               <button className="mt-4 text-sm text-muted-foreground hover:text-foreground" onClick={() => setMode(mode === "up" ? "in" : "up")}>
-                {mode !== "up" ? "New to Keystone? Create an account" : "Already have an account? Sign in"}
+                {mode !== "up" ? "New to Bridgeway? Create an account" : "Already have an account? Sign in"}
               </button>
             </>
           )}
